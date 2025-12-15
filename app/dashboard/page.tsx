@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { SearchIcon, FilterIcon, ChevronDownIcon } from "lucide-react"
+import Link from "next/link"
+import { SearchIcon, FilterIcon, ChevronDownIcon, PlusIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -95,7 +96,15 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <h1 className="text-2xl font-semibold tracking-tight">Properties</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold tracking-tight">Properties</h1>
+        <Button asChild>
+          <Link href="/dashboard/new">
+            <PlusIcon className="size-4" />
+            New Property
+          </Link>
+        </Button>
+      </div>
 
       {/* Filter Bar */}
       <div className="flex flex-col sm:flex-row gap-4">
