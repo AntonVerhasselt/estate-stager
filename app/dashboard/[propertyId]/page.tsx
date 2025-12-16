@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import {
   CalendarPlus,
   BadgeCheck,
@@ -24,13 +25,11 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  Phone,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Table,
@@ -59,22 +58,17 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
-import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  VisitSheet,
+  type Visit,
+  type VisitFormData,
+} from "@/components/visits/visit-sheet"
 
 // ============================================================================
 // MOCK DATA TOGGLES - Set to true to test empty states
@@ -86,24 +80,14 @@ const MOCK_EMPTY_PICTURES = false
 // TYPES
 // ============================================================================
 type PropertyStatus = "available" | "sold"
-type VisitStatus = "planned" | "completed"
 type RoomType = "living" | "kitchen" | "bedroom" | "bathroom" | "other"
 type SortDirection = "asc" | "desc" | null
-type SortColumn = "startAt" | "buyerName" | "status" | null
+type SortColumn = "startAt" | "prospectName" | "status" | null
 
 type Property = {
   id: string
   address: string
   status: PropertyStatus
-}
-
-type Visit = {
-  id: string
-  startAt: Date
-  buyerName: string
-  phoneNumber: string
-  countryCode: string
-  status: VisitStatus
 }
 
 type Picture = {
@@ -116,15 +100,6 @@ type Picture = {
 // ============================================================================
 // CONSTANTS
 // ============================================================================
-const COUNTRY_CODES = [
-  { code: "+32", country: "Belgium", flag: "🇧🇪" },
-  { code: "+31", country: "Netherlands", flag: "🇳🇱" },
-  { code: "+33", country: "France", flag: "🇫🇷" },
-  { code: "+49", country: "Germany", flag: "🇩🇪" },
-  { code: "+44", country: "UK", flag: "🇬🇧" },
-  { code: "+1", country: "US", flag: "🇺🇸" },
-]
-
 const ITEMS_PER_PAGE_OPTIONS = [5, 10, 20]
 
 // ============================================================================
@@ -142,15 +117,15 @@ const initialMockVisits: Visit[] = MOCK_EMPTY_VISITS
       {
         id: "v1",
         startAt: new Date("2025-12-16T10:00:00"),
-        buyerName: "Sarah Johnson",
+        prospectName: "Sarah Johnson",
         phoneNumber: "471234567",
         countryCode: "+32",
-        status: "planned",
+        status: "prepared",
       },
       {
         id: "v2",
         startAt: new Date("2025-12-14T14:30:00"),
-        buyerName: "Michael Chen",
+        prospectName: "Michael Chen",
         phoneNumber: "612345678",
         countryCode: "+31",
         status: "completed",
@@ -158,15 +133,15 @@ const initialMockVisits: Visit[] = MOCK_EMPTY_VISITS
       {
         id: "v3",
         startAt: new Date("2025-12-12T11:00:00"),
-        buyerName: "Emily Davis",
+        prospectName: "Emily Davis",
         phoneNumber: "678901234",
         countryCode: "+33",
-        status: "completed",
+        status: "cancelled",
       },
       {
         id: "v4",
         startAt: new Date("2025-12-18T16:00:00"),
-        buyerName: "Amanda Brown",
+        prospectName: "Amanda Brown",
         phoneNumber: "491234567",
         countryCode: "+32",
         status: "planned",
@@ -174,7 +149,7 @@ const initialMockVisits: Visit[] = MOCK_EMPTY_VISITS
       {
         id: "v5",
         startAt: new Date("2025-12-20T09:00:00"),
-        buyerName: "Robert Taylor",
+        prospectName: "Robert Taylor",
         phoneNumber: "478901234",
         countryCode: "+32",
         status: "planned",
@@ -182,7 +157,7 @@ const initialMockVisits: Visit[] = MOCK_EMPTY_VISITS
       {
         id: "v6",
         startAt: new Date("2025-12-10T15:00:00"),
-        buyerName: "Jennifer Martinez",
+        prospectName: "Jennifer Martinez",
         phoneNumber: "623456789",
         countryCode: "+31",
         status: "completed",
@@ -190,10 +165,10 @@ const initialMockVisits: Visit[] = MOCK_EMPTY_VISITS
       {
         id: "v7",
         startAt: new Date("2025-12-22T11:30:00"),
-        buyerName: "David Anderson",
+        prospectName: "David Anderson",
         phoneNumber: "156789012",
         countryCode: "+49",
-        status: "planned",
+        status: "prepared",
       },
     ]
 
@@ -301,32 +276,8 @@ function getRoomTypeIcon(roomType: RoomType) {
   return icons[roomType]
 }
 
-function getMinDateTime(): string {
-  const now = new Date()
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
-  return now.toISOString().slice(0, 16)
-}
-
 function generateId(): string {
   return `v${Date.now()}`
-}
-
-// ============================================================================
-// HOOKS
-// ============================================================================
-function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = React.useState(false)
-
-  React.useEffect(() => {
-    const media = window.matchMedia(query)
-    setMatches(media.matches)
-
-    const listener = (e: MediaQueryListEvent) => setMatches(e.matches)
-    media.addEventListener("change", listener)
-    return () => media.removeEventListener("change", listener)
-  }, [query])
-
-  return matches
 }
 
 // ============================================================================
@@ -397,143 +348,6 @@ function TitleRow({
   )
 }
 
-function PlanVisitDrawer({
-  open,
-  onOpenChange,
-  onSubmit,
-}: {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  onSubmit: (visit: Omit<Visit, "id" | "status">) => void
-}) {
-  const isMobile = useMediaQuery("(max-width: 639px)")
-  const [buyerName, setBuyerName] = React.useState("")
-  const [countryCode, setCountryCode] = React.useState("+32")
-  const [phoneNumber, setPhoneNumber] = React.useState("")
-  const [dateTime, setDateTime] = React.useState("")
-
-  const resetForm = () => {
-    setBuyerName("")
-    setCountryCode("+32")
-    setPhoneNumber("")
-    setDateTime("")
-  }
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!buyerName || !phoneNumber || !dateTime) return
-
-    onSubmit({
-      buyerName,
-      phoneNumber,
-      countryCode,
-      startAt: new Date(dateTime),
-    })
-    resetForm()
-    onOpenChange(false)
-  }
-
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen) {
-      resetForm()
-    }
-    onOpenChange(newOpen)
-  }
-
-  const isValid = buyerName && phoneNumber && dateTime
-
-  return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent
-        side={isMobile ? "bottom" : "right"}
-        className={isMobile ? "max-h-[85vh] overflow-y-auto" : ""}
-      >
-        <SheetHeader>
-          <SheetTitle>Plan a visit</SheetTitle>
-          <SheetDescription>
-            Schedule a property viewing with a potential buyer.
-          </SheetDescription>
-        </SheetHeader>
-
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
-          <div className="space-y-2">
-            <Label htmlFor="buyerName">Buyer name</Label>
-            <Input
-              id="buyerName"
-              placeholder="Enter buyer's full name"
-              value={buyerName}
-              onChange={(e) => setBuyerName(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone number</Label>
-            <div className="flex gap-2">
-              <Select value={countryCode} onValueChange={setCountryCode}>
-                <SelectTrigger className="w-[100px] shrink-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {COUNTRY_CODES.map((country) => (
-                    <SelectItem key={country.code} value={country.code}>
-                      <span className="flex items-center gap-1.5">
-                        <span>{country.flag}</span>
-                        <span>{country.code}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="relative flex-1">
-                <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="Phone number"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="pl-8"
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="datetime">Date & time</Label>
-            <Input
-              id="datetime"
-              type="datetime-local"
-              value={dateTime}
-              onChange={(e) => setDateTime(e.target.value)}
-              min={getMinDateTime()}
-              required
-              className="w-full"
-            />
-          </div>
-        </form>
-
-        <SheetFooter className="flex-col sm:flex-row gap-2">
-          <SheetClose asChild>
-            <Button variant="outline" className="w-full sm:w-auto">
-              Cancel
-            </Button>
-          </SheetClose>
-          <Button
-            onClick={handleSubmit}
-            disabled={!isValid}
-            className="w-full sm:w-auto"
-          >
-            <CalendarPlus data-icon="inline-start" />
-            Schedule visit
-          </Button>
-        </SheetFooter>
-      </SheetContent>
-    </Sheet>
-  )
-}
-
 function VisitsSection({
   visits,
   onOpenVisit,
@@ -555,12 +369,12 @@ function VisitsSection({
   const filteredVisits = visits.filter((visit) => {
     const query = searchQuery.toLowerCase()
     const dateTimeStr = formatDateTime(visit.startAt).toLowerCase()
-    const buyerName = visit.buyerName.toLowerCase()
+    const prospectName = visit.prospectName.toLowerCase()
     const status = visit.status.toLowerCase()
 
     return (
       dateTimeStr.includes(query) ||
-      buyerName.includes(query) ||
+      prospectName.includes(query) ||
       status.includes(query)
     )
   })
@@ -574,8 +388,8 @@ function VisitsSection({
       case "startAt":
         comparison = a.startAt.getTime() - b.startAt.getTime()
         break
-      case "buyerName":
-        comparison = a.buyerName.localeCompare(b.buyerName)
+      case "prospectName":
+        comparison = a.prospectName.localeCompare(b.prospectName)
         break
       case "status":
         comparison = a.status.localeCompare(b.status)
@@ -658,11 +472,11 @@ function VisitsSection({
               </TableHead>
               <TableHead
                 className="cursor-pointer select-none"
-                onClick={() => handleSort("buyerName")}
+                onClick={() => handleSort("prospectName")}
               >
                 <div className="flex items-center gap-1">
-                  Buyer
-                  {getSortIcon("buyerName")}
+                  Prospect
+                  {getSortIcon("prospectName")}
                 </div>
               </TableHead>
               <TableHead
@@ -689,7 +503,11 @@ function VisitsSection({
               </TableRow>
             ) : (
               paginatedVisits.map((visit) => (
-                <TableRow key={visit.id}>
+                <TableRow
+                  key={visit.id}
+                  onClick={() => onOpenVisit(visit.id)}
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                >
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Clock className="size-3.5 text-muted-foreground hidden sm:block" />
@@ -701,15 +519,19 @@ function VisitsSection({
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <User className="size-3.5 text-muted-foreground hidden sm:block" />
-                      {visit.buyerName}
+                      {visit.prospectName}
                     </div>
                   </TableCell>
                   <TableCell>
                     <Badge
                       variant="secondary"
                       className={
-                        visit.status === "planned"
+                        visit.status === "prepared"
                           ? "bg-primary/15 text-primary"
+                          : visit.status === "planned"
+                          ? "bg-muted text-muted-foreground"
+                          : visit.status === "cancelled"
+                          ? "bg-destructive/10 text-destructive"
                           : undefined
                       }
                     >
@@ -718,13 +540,7 @@ function VisitsSection({
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => onOpenVisit(visit.id)}
-                    >
-                      <ArrowUpRight />
-                    </Button>
+                    <ArrowUpRight className="size-4 text-muted-foreground" />
                   </TableCell>
                 </TableRow>
               ))
@@ -965,6 +781,8 @@ export default function PropertyDetailPage({
 }) {
   const resolvedParams = React.use(params)
 
+  const router = useRouter()
+
   // State for all data
   const [visits, setVisits] = React.useState<Visit[]>(initialMockVisits)
   const [pictures, setPictures] = React.useState<Picture[]>(initialMockPictures)
@@ -978,10 +796,10 @@ export default function PropertyDetailPage({
   }
 
   const handleOpenVisit = (id: string) => {
-    console.log("Open visit:", id)
+    router.push(`/dashboard/${resolvedParams.propertyId}/${id}`)
   }
 
-  const handleAddVisit = (visitData: Omit<Visit, "id" | "status">) => {
+  const handleAddVisit = (visitData: VisitFormData) => {
     const newVisit: Visit = {
       ...visitData,
       id: generateId(),
@@ -1016,9 +834,10 @@ export default function PropertyDetailPage({
         />
       </div>
 
-      <PlanVisitDrawer
+      <VisitSheet
         open={planVisitOpen}
         onOpenChange={setPlanVisitOpen}
+        mode="create"
         onSubmit={handleAddVisit}
       />
     </>
