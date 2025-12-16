@@ -2,8 +2,10 @@
 
 import * as React from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
+  ArrowLeft,
   CalendarPlus,
   BadgeCheck,
   Calendar,
@@ -25,12 +27,15 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Trees,
+  DoorOpen,
+  Monitor,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
   TableBody,
@@ -69,6 +74,11 @@ import {
   type Visit,
   type VisitFormData,
 } from "@/components/visits/visit-sheet"
+import {
+  AddImagesSheet,
+  type PendingImage,
+} from "@/components/property/add-images-sheet"
+import { type RoomType as ImageGalleryRoomType } from "@/components/add-property/image-gallery"
 
 // ============================================================================
 // MOCK DATA TOGGLES - Set to true to test empty states
@@ -80,7 +90,15 @@ const MOCK_EMPTY_PICTURES = false
 // TYPES
 // ============================================================================
 type PropertyStatus = "available" | "sold"
-type RoomType = "living" | "kitchen" | "bedroom" | "bathroom" | "other"
+type RoomType =
+  | "living-room"
+  | "kitchen"
+  | "bedroom"
+  | "bathroom"
+  | "garden"
+  | "hall"
+  | "desk-area"
+  | "other"
 type SortDirection = "asc" | "desc" | null
 type SortColumn = "startAt" | "prospectName" | "status" | null
 
@@ -179,7 +197,7 @@ const initialMockPictures: Picture[] = MOCK_EMPTY_PICTURES
         id: "p1",
         imageUrl:
           "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&auto=format&fit=crop",
-        roomType: "living",
+        roomType: "living-room",
         createdAt: new Date("2025-12-01"),
       },
       {
@@ -207,7 +225,7 @@ const initialMockPictures: Picture[] = MOCK_EMPTY_PICTURES
         id: "p5",
         imageUrl:
           "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop",
-        roomType: "living",
+        roomType: "living-room",
         createdAt: new Date("2025-12-03"),
       },
       {
@@ -256,10 +274,13 @@ function formatDate(date: Date): string {
 
 function getRoomTypeLabel(roomType: RoomType): string {
   const labels: Record<RoomType, string> = {
-    living: "Living room",
+    "living-room": "Living Room",
     kitchen: "Kitchen",
     bedroom: "Bedroom",
     bathroom: "Bathroom",
+    garden: "Garden",
+    hall: "Hall",
+    "desk-area": "Desk Area",
     other: "Other",
   }
   return labels[roomType]
@@ -267,10 +288,13 @@ function getRoomTypeLabel(roomType: RoomType): string {
 
 function getRoomTypeIcon(roomType: RoomType) {
   const icons: Record<RoomType, React.ReactNode> = {
-    living: <Sofa className="size-3.5" />,
+    "living-room": <Sofa className="size-3.5" />,
     kitchen: <ChefHat className="size-3.5" />,
     bedroom: <BedDouble className="size-3.5" />,
     bathroom: <Bath className="size-3.5" />,
+    garden: <Trees className="size-3.5" />,
+    hall: <DoorOpen className="size-3.5" />,
+    "desk-area": <Monitor className="size-3.5" />,
     other: <ImageIcon className="size-3.5" />,
   }
   return icons[roomType]
@@ -441,167 +465,170 @@ function VisitsSection({
   }
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-center gap-2">
-        <Calendar className="size-5 text-muted-foreground" />
-        <h2 className="text-lg font-semibold">Visits</h2>
-      </div>
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Calendar className="size-4 text-muted-foreground" />
+          Visits
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="relative w-full sm:max-w-sm">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            placeholder="Search visits…"
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="pl-8"
+          />
+        </div>
 
-      <div className="relative w-full sm:max-w-sm">
-        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-        <Input
-          placeholder="Search visits…"
-          value={searchQuery}
-          onChange={(e) => handleSearchChange(e.target.value)}
-          className="pl-8"
-        />
-      </div>
-
-      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead
-                className="cursor-pointer select-none"
-                onClick={() => handleSort("startAt")}
-              >
-                <div className="flex items-center gap-1">
-                  Date & time
-                  {getSortIcon("startAt")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer select-none"
-                onClick={() => handleSort("prospectName")}
-              >
-                <div className="flex items-center gap-1">
-                  Prospect
-                  {getSortIcon("prospectName")}
-                </div>
-              </TableHead>
-              <TableHead
-                className="cursor-pointer select-none"
-                onClick={() => handleSort("status")}
-              >
-                <div className="flex items-center gap-1">
-                  Status
-                  {getSortIcon("status")}
-                </div>
-              </TableHead>
-              <TableHead className="w-[50px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedVisits.length === 0 ? (
+        <div className="overflow-x-auto -mx-6 px-6">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell
-                  colSpan={4}
-                  className="text-center text-muted-foreground py-8"
+                <TableHead
+                  className="cursor-pointer select-none"
+                  onClick={() => handleSort("startAt")}
                 >
-                  No matching visits
-                </TableCell>
+                  <div className="flex items-center gap-1">
+                    Date & time
+                    {getSortIcon("startAt")}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none"
+                  onClick={() => handleSort("prospectName")}
+                >
+                  <div className="flex items-center gap-1">
+                    Prospect
+                    {getSortIcon("prospectName")}
+                  </div>
+                </TableHead>
+                <TableHead
+                  className="cursor-pointer select-none"
+                  onClick={() => handleSort("status")}
+                >
+                  <div className="flex items-center gap-1">
+                    Status
+                    {getSortIcon("status")}
+                  </div>
+                </TableHead>
+                <TableHead className="w-[50px]"></TableHead>
               </TableRow>
-            ) : (
-              paginatedVisits.map((visit) => (
-                <TableRow
-                  key={visit.id}
-                  onClick={() => onOpenVisit(visit.id)}
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                >
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Clock className="size-3.5 text-muted-foreground hidden sm:block" />
-                      <span className="whitespace-nowrap">
-                        {formatDateTime(visit.startAt)}
-                      </span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <User className="size-3.5 text-muted-foreground hidden sm:block" />
-                      {visit.prospectName}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className={
-                        visit.status === "prepared"
-                          ? "bg-primary/15 text-primary"
-                          : visit.status === "planned"
-                          ? "bg-muted text-muted-foreground"
-                          : visit.status === "cancelled"
-                          ? "bg-destructive/10 text-destructive"
-                          : undefined
-                      }
-                    >
-                      {visit.status.charAt(0).toUpperCase() +
-                        visit.status.slice(1)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <ArrowUpRight className="size-4 text-muted-foreground" />
+            </TableHeader>
+            <TableBody>
+              {paginatedVisits.length === 0 ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={4}
+                    className="text-center text-muted-foreground py-8"
+                  >
+                    No matching visits
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ) : (
+                paginatedVisits.map((visit) => (
+                  <TableRow
+                    key={visit.id}
+                    onClick={() => onOpenVisit(visit.id)}
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  >
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Clock className="size-3.5 text-muted-foreground hidden sm:block" />
+                        <span className="whitespace-nowrap">
+                          {formatDateTime(visit.startAt)}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <User className="size-3.5 text-muted-foreground hidden sm:block" />
+                        {visit.prospectName}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="secondary"
+                        className={
+                          visit.status === "prepared"
+                            ? "bg-primary/15 text-primary"
+                            : visit.status === "planned"
+                            ? "bg-muted text-muted-foreground"
+                            : visit.status === "cancelled"
+                            ? "bg-destructive/10 text-destructive"
+                            : undefined
+                        }
+                      >
+                        {visit.status.charAt(0).toUpperCase() +
+                          visit.status.slice(1)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <ArrowUpRight className="size-4 text-muted-foreground" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
 
-      {/* Pagination */}
-      {sortedVisits.length > 0 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-          <div className="flex items-center gap-4 order-2 sm:order-1">
-            <p className="text-xs text-muted-foreground">
-              Showing {startIndex + 1}-{Math.min(endIndex, sortedVisits.length)}{" "}
-              of {sortedVisits.length} visits
-            </p>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                Show:
-              </span>
-              <Select
-                value={String(itemsPerPage)}
-                onValueChange={handleItemsPerPageChange}
+        {/* Pagination */}
+        {sortedVisits.length > 0 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+            <div className="flex items-center gap-4 order-2 sm:order-1">
+              <p className="text-xs text-muted-foreground">
+                Showing {startIndex + 1}-{Math.min(endIndex, sortedVisits.length)}{" "}
+                of {sortedVisits.length} visits
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  Show:
+                </span>
+                <Select
+                  value={String(itemsPerPage)}
+                  onValueChange={handleItemsPerPageChange}
+                >
+                  <SelectTrigger className="w-[70px] h-8">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ITEMS_PER_PAGE_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={String(option)}>
+                        {option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 order-1 sm:order-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
               >
-                <SelectTrigger className="w-[70px] h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {ITEMS_PER_PAGE_OPTIONS.map((option) => (
-                    <SelectItem key={option} value={String(option)}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <ChevronLeft />
+              </Button>
+              <span className="text-xs min-w-[80px] text-center">
+                Page {currentPage} of {totalPages || 1}
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+              >
+                <ChevronRight />
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2 order-1 sm:order-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft />
-            </Button>
-            <span className="text-xs min-w-[80px] text-center">
-              Page {currentPage} of {totalPages || 1}
-            </span>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-              disabled={currentPage >= totalPages}
-            >
-              <ChevronRight />
-            </Button>
-          </div>
-        </div>
-      )}
-    </section>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
@@ -737,37 +764,40 @@ function PicturesSection({
   onAddImages: () => void
 }) {
   return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <ImageIcon className="size-5 text-muted-foreground" />
-          <h2 className="text-lg font-semibold">Pictures</h2>
-        </div>
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base flex items-center gap-2">
+            <ImageIcon className="size-4 text-muted-foreground" />
+            Pictures
+          </CardTitle>
 
-        {/* Only show upload button when pictures exist */}
-        {pictures.length > 0 && (
-          <Button variant="outline" onClick={onAddImages}>
-            <Upload data-icon="inline-start" />
-            <span className="hidden sm:inline">Add images</span>
-            <span className="sm:hidden">Add</span>
-          </Button>
+          {/* Only show upload button when pictures exist */}
+          {pictures.length > 0 && (
+            <Button variant="outline" size="sm" onClick={onAddImages}>
+              <Upload data-icon="inline-start" />
+              <span className="hidden sm:inline">Add images</span>
+              <span className="sm:hidden">Add</span>
+            </Button>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        {pictures.length === 0 ? (
+          <PicturesEmptyState onAddImages={onAddImages} />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
+            {pictures.map((picture) => (
+              <PictureCard
+                key={picture.id}
+                picture={picture}
+                onDelete={onDeletePicture}
+              />
+            ))}
+          </div>
         )}
-      </div>
-
-      {pictures.length === 0 ? (
-        <PicturesEmptyState onAddImages={onAddImages} />
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6">
-          {pictures.map((picture) => (
-            <PictureCard
-              key={picture.id}
-              picture={picture}
-              onDelete={onDeletePicture}
-            />
-          ))}
-        </div>
-      )}
-    </section>
+      </CardContent>
+    </Card>
   )
 }
 
@@ -782,11 +812,16 @@ export default function PropertyDetailPage({
   const resolvedParams = React.use(params)
 
   const router = useRouter()
+  const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   // State for all data
   const [visits, setVisits] = React.useState<Visit[]>(initialMockVisits)
   const [pictures, setPictures] = React.useState<Picture[]>(initialMockPictures)
   const [planVisitOpen, setPlanVisitOpen] = React.useState(false)
+
+  // State for add images flow
+  const [addImagesOpen, setAddImagesOpen] = React.useState(false)
+  const [pendingImages, setPendingImages] = React.useState<PendingImage[]>([])
 
   // In a real app, we'd fetch data based on params.propertyId
   console.log("Property ID:", resolvedParams.propertyId)
@@ -815,12 +850,73 @@ export default function PropertyDetailPage({
   }
 
   const handleAddImages = () => {
-    console.log("Add images clicked")
+    fileInputRef.current?.click()
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    const newImages: PendingImage[] = Array.from(files).map((file) => ({
+      id: `img-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      src: URL.createObjectURL(file),
+      file,
+      roomType: null,
+    }))
+
+    setPendingImages(newImages)
+    setAddImagesOpen(true)
+
+    // Reset input so same file can be selected again
+    e.target.value = ""
+  }
+
+  const handleAddImagesSubmit = (images: PendingImage[]) => {
+    // Convert pending images to Picture format
+    const newPictures: Picture[] = images.map((img) => ({
+      id: img.id,
+      imageUrl: img.src,
+      roomType: img.roomType as RoomType,
+      createdAt: new Date(),
+    }))
+
+    setPictures((prev) => [...prev, ...newPictures])
+    setPendingImages([])
+    console.log("Added images:", newPictures)
+  }
+
+  const handleAddImagesOpenChange = (open: boolean) => {
+    setAddImagesOpen(open)
+    if (!open) {
+      // Clean up blob URLs when closing
+      pendingImages.forEach((img) => URL.revokeObjectURL(img.src))
+      setPendingImages([])
+    }
   }
 
   return (
     <>
+      {/* Hidden file input for image selection */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleFileSelect}
+        className="sr-only"
+      />
+
       <div className="space-y-6 sm:space-y-8">
+        {/* Back navigation */}
+        <div>
+          <Button asChild variant="ghost" size="sm" className="-ml-2">
+            <Link href="/dashboard">
+              <ArrowLeft data-icon="inline-start" />
+              Back to properties
+            </Link>
+          </Button>
+        </div>
+
         <TitleRow
           property={initialMockProperty}
           onMarkAsSold={handleMarkAsSold}
@@ -839,6 +935,14 @@ export default function PropertyDetailPage({
         onOpenChange={setPlanVisitOpen}
         mode="create"
         onSubmit={handleAddVisit}
+      />
+
+      <AddImagesSheet
+        open={addImagesOpen}
+        onOpenChange={handleAddImagesOpenChange}
+        initialImages={pendingImages}
+        onImagesChange={setPendingImages}
+        onSubmit={handleAddImagesSubmit}
       />
     </>
   )

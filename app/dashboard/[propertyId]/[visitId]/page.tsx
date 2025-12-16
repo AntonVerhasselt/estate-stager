@@ -402,6 +402,7 @@ export default function VisitDetailPage({
               onGenerateAll={handleGenerateAllImages}
               hasStyleProfile={styleProfile !== null}
               prospectLink={prospectLink}
+              visitStatus={visit.status}
             />
           </CardContent>
         </Card>
