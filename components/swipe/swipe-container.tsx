@@ -1,10 +1,13 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { AnimatePresence } from "framer-motion"
+import { Sparkles } from "lucide-react"
 
 import { SwipeCard } from "@/components/swipe/swipe-card"
 import { DesktopControls } from "@/components/swipe/desktop-controls"
+import { Button } from "@/components/ui/button"
 import { type SwipeImage } from "@/lib/mock-data/swipe-images"
 
 // ============================================================================
@@ -19,12 +22,13 @@ type SwipeContainerProps = {
   images: SwipeImage[]
   onSwipe: (image: SwipeImage, direction: "left" | "right") => void
   swipedImages: SwipedImages
+  onViewProfile?: () => void
 }
 
 // ============================================================================
 // COMPONENT
 // ============================================================================
-export function SwipeContainer({ images, onSwipe, swipedImages }: SwipeContainerProps) {
+export function SwipeContainer({ images, onSwipe, swipedImages, onViewProfile }: SwipeContainerProps) {
   const totalSwiped = swipedImages.liked.length + swipedImages.disliked.length
   const currentIndex = totalSwiped
   const currentImage = images[currentIndex]
@@ -66,30 +70,30 @@ export function SwipeContainer({ images, onSwipe, swipedImages }: SwipeContainer
           <span className="text-3xl">✨</span>
         </div>
         <h2 className="text-lg font-semibold mb-2">You&apos;ve seen them all!</h2>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground mb-6">
           Great job exploring different styles.
         </p>
+        {onViewProfile && (
+          <Button onClick={onViewProfile}>
+            <Sparkles data-icon="inline-start" />
+            View Style Profile
+          </Button>
+        )}
       </div>
     )
   }
 
   return (
     <div className="relative flex flex-col h-full bg-background">
-      {/* Progress indicator */}
-      <div className="absolute top-4 left-4 right-4 z-50 flex items-center gap-2">
-        <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-primary transition-all duration-300"
-            style={{ width: `${(totalSwiped / images.length) * 100}%` }}
-          />
-        </div>
-        <span className="text-xs text-muted-foreground font-medium shrink-0">
-          {totalSwiped}/{images.length}
-        </span>
+      {/* Logo */}
+      <div className="absolute top-4 left-0 right-0 z-50 flex justify-center">
+        <Link href="/" className="font-semibold text-sm tracking-tight">
+          <span className="text-primary">est</span>ager
+        </Link>
       </div>
       
       {/* Card stack area - centered with flexbox */}
-      <div className="flex-1 mt-12 mb-4 flex items-center justify-center">
+      <div className="flex-1 mb-4 flex items-center justify-center">
         {/* Card stack - relative container for absolute positioning of cards */}
         <div className="relative flex items-center justify-center">
           <AnimatePresence mode="popLayout">

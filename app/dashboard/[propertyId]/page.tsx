@@ -304,6 +304,15 @@ function generateId(): string {
   return `v${Date.now()}`
 }
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onloadend = () => resolve(reader.result as string)
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
+}
+
 // ============================================================================
 // COMPONENTS
 // ============================================================================
@@ -871,14 +880,20 @@ export default function PropertyDetailPage({
     e.target.value = ""
   }
 
-  const handleAddImagesSubmit = (images: PendingImage[]) => {
-    // Convert pending images to Picture format
-    const newPictures: Picture[] = images.map((img) => ({
-      id: img.id,
-      imageUrl: img.src,
-      roomType: img.roomType as RoomType,
-      createdAt: new Date(),
-    }))
+  const handleAddImagesSubmit = async (images: PendingImage[]) => {
+    // Convert blob URLs to data URLs so they persist after blob URLs are revoked
+    const newPictures: Picture[] = await Promise.all(
+      images.map(async (img) => {
+        // Read the file as a data URL instead of using the blob URL
+        const dataUrl = await fileToDataUrl(img.file)
+        return {
+          id: img.id,
+          imageUrl: dataUrl,
+          roomType: img.roomType as RoomType,
+          createdAt: new Date(),
+        }
+      })
+    )
 
     setPictures((prev) => [...prev, ...newPictures])
     setPendingImages([])
