@@ -158,24 +158,30 @@ export default function DashboardPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProperties.map((property) => (
-            <Card key={property.id} className="overflow-hidden pt-0">
-              <img
-                src={property.image}
-                alt={property.address}
-                className="aspect-video w-full object-cover"
-              />
-              <CardHeader>
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="line-clamp-2">{property.address}</CardTitle>
-                  <Badge
-                    variant={property.status === "available" ? "default" : "secondary"}
-                    className="shrink-0"
-                  >
-                    {property.status === "available" ? "Available" : "Sold"}
-                  </Badge>
-                </div>
-              </CardHeader>
-            </Card>
+            <Link key={property.id} href={`/dashboard/${property.id}`}>
+              <Card className="overflow-hidden pt-0 transition-all hover:ring-2 hover:ring-primary/50 cursor-pointer">
+                <img
+                  src={property.image}
+                  alt={property.address}
+                  className="aspect-video w-full object-cover"
+                />
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="line-clamp-2">{property.address}</CardTitle>
+                    <Badge
+                      variant="secondary"
+                      className={`shrink-0 ${
+                        property.status === "available"
+                          ? "bg-primary/15 text-primary"
+                          : ""
+                      }`}
+                    >
+                      {property.status === "available" ? "Available" : "Sold"}
+                    </Badge>
+                  </div>
+                </CardHeader>
+              </Card>
+            </Link>
           ))}
         </div>
       )}

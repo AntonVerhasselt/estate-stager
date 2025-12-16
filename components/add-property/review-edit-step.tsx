@@ -48,7 +48,7 @@ export function ReviewEditStep({
   onBack,
   onSubmit,
 }: ReviewEditStepProps) {
-  const [address, setAddress] = React.useState(initialAddress || "")
+  const [address, setAddress] = React.useState<string>(initialAddress || "")
   const [images, setImages] = React.useState<PropertyImage[]>(initialImages)
   const [agentId, setAgentId] = React.useState<string | null>(null)
   const [addressError, setAddressError] = React.useState<string | null>(null)
@@ -98,7 +98,8 @@ export function ReviewEditStep({
     
     if (hasError) return
     
-    onSubmit({ address: address.trim(), images, agentId })
+    // TypeScript: We've validated that address is not empty and agentId is not null
+    onSubmit({ address: address.trim(), images, agentId: agentId! })
   }
 
   // Clear error when all images are properly tagged
