@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { UserButton } from "@clerk/nextjs"
 
 export default function DashboardLayout({
   children,
@@ -14,11 +14,8 @@ export default function DashboardLayout({
           <span className="text-primary">est</span>ager
         </Link>
         
-        {/* User Avatar */}
-        <Avatar>
-          <AvatarImage src="https://github.com/shadcn.png" alt="User" />
-          <AvatarFallback>JD</AvatarFallback>
-        </Avatar>
+        {/* User Button */}
+        <UserButton />
       </header>
       
       <main className="p-6">
