@@ -11,7 +11,8 @@ export default defineSchema({
     organizationIds: v.optional(v.array(v.id("organizations"))),
   })
     .index("by_clerkId", ["clerkId"])
-    .index("by_email", ["email"]),
+    .index("by_email", ["email"])
+    .index("by_organizationIds", ["organizationIds"]),
 
   organizations: defineTable({
     clerkOrganizationId: v.string(), // Links to Clerk organization
@@ -30,8 +31,8 @@ export default defineSchema({
     status: v.union(v.literal("available"), v.literal("sold")),
     organizationId: v.id("organizations"),
     userId: v.id("users"), // Created by / assigned to
-    // Optional: source URL if scraped from listing site
     sourceUrl: v.optional(v.string()),
+    images: v.array(v.id("images")),
   })
     .index("by_organizationId", ["organizationId"])
     .index("by_userId", ["userId"])
