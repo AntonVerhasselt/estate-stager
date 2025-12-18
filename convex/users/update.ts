@@ -55,11 +55,27 @@ export const addOrganization = mutation({
       throw new Error("User not found");
     }
 
-    const currentOrgs = user.organizationIds || [];
+    // Load and validate the organization exists
+    const organization = await ctx.db.get(args.organizationId);
+    if (!organization) {
+      throw new Error("Organization not found");
+    }
 
-    await ctx.db.patch(user._id, {
-      organizationIds: [...currentOrgs, args.organizationId],
-    });
+    // Update user's organizationIds (avoid duplicates)
+    const currentOrgs = user.organizationIds || [];
+    if (!currentOrgs.includes(args.organizationId)) {
+      await ctx.db.patch(user._id, {
+        organizationIds: [...currentOrgs, args.organizationId],
+      });
+    }
+
+    // Update organization's users array (avoid duplicates)
+    const currentUsers = organization.users || [];
+    if (!currentUsers.includes(user._id)) {
+      await ctx.db.patch(args.organizationId, {
+        users: [...currentUsers, user._id],
+      });
+    }
 
     return user._id;
   },
