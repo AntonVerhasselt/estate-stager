@@ -75,6 +75,7 @@ export const scrapePropertyUrl = action({
         return {
           address: null,
           imageUrls: [],
+          users: [],
         };
       }
 
@@ -85,20 +86,24 @@ export const scrapePropertyUrl = action({
         return {
           address: null,
           imageUrls: [],
+          users: [],
         };
       }
 
       // Extract address from JSON result
       const address = result.data.json?.address ?? null;
 
-      // Extract image URLs from images array
-      const imageUrls: string[] = result.data.images ?? [];
+      // Get scraped images and filter them
+      const scrapedImageUrls = result.data.images ?? [];
+      const filteredImages: { filteredImageUrls: string[] } = await ctx.runAction(internal.images.filter.filterImages, {
+        imageUrls: scrapedImageUrls,
+      });
 
       const users: object[] = await ctx.runQuery(internal.users.list.listOrganizationUsers);
 
       return {
         address,
-        imageUrls,
+        imageUrls: filteredImages.filteredImageUrls,
         users
       };
     } catch (error) {
