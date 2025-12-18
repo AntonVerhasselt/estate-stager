@@ -222,7 +222,7 @@ export const filterImages = internalAction({
   args: {
     imageUrls: v.array(v.string()),
   },
-  handler: async ({}, args) => {
+  handler: async (_ctx, args) => {
     const { imageUrls } = args;
     
     console.log(`[ImageFilter] Starting with ${imageUrls.length} images`);
