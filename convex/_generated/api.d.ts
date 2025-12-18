@@ -8,13 +8,25 @@
  * @module
  */
 
+import type * as organizations_create from "../organizations/create.js";
+import type * as organizations_updateClerk from "../organizations/updateClerk.js";
+import type * as users_create from "../users/create.js";
+import type * as users_update from "../users/update.js";
+import type * as users_updateClerk from "../users/updateClerk.js";
+
 import type {
   ApiFromModules,
   FilterApi,
   FunctionReference,
 } from "convex/server";
 
-declare const fullApi: ApiFromModules<{}>;
+declare const fullApi: ApiFromModules<{
+  "organizations/create": typeof organizations_create;
+  "organizations/updateClerk": typeof organizations_updateClerk;
+  "users/create": typeof users_create;
+  "users/update": typeof users_update;
+  "users/updateClerk": typeof users_updateClerk;
+}>;
 
 /**
  * A utility for referencing Convex functions in your app's public API.
