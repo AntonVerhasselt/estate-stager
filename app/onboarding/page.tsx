@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser, useOrganization, useClerk } from "@clerk/nextjs";
+import { useUser, useOrganization, useSession } from "@clerk/nextjs";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useMutation, useAction } from "convex/react";
@@ -16,7 +16,7 @@ const MAX_INIT_RETRIES = 3;
 
 export default function OnboardingPage() {
   const { user, isLoaded: userLoaded } = useUser();
-  const { session } = useClerk();
+  const { session } = useSession();
   const { organization, isLoaded: orgLoaded } = useOrganization();
   const router = useRouter();
   const [step, setStep] = useState(1);
