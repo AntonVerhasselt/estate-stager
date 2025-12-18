@@ -2,7 +2,7 @@
 
 import { action } from "../_generated/server";
 import { v } from "convex/values";
-import { createClerkClient } from "@clerk/backend";
+import { getClerkClient } from "../lib/clerk";
 
 export const updateOrganizationMetadata = action({
   args: {
@@ -23,10 +23,7 @@ export const updateOrganizationMetadata = action({
       throw new Error("Not authorized to update this organization");
     }
 
-    // Initialize Clerk backend client
-    const client = createClerkClient({
-      secretKey: process.env.CLERK_SECRET_KEY!,
-    });
+    const client = getClerkClient();
 
     // Update organization metadata using Clerk backend SDK
     await client.organizations.updateOrganizationMetadata(
