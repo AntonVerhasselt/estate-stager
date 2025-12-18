@@ -203,7 +203,7 @@ export default function OnboardingPage() {
   const handleStep1Complete = () => {
     if (hasOrganization) {
       // User already has org - go directly to dashboard
-      window.location.href = "/dashboard";
+      router.push("/dashboard");
     } else {
       // New user without org - proceed to step 2
       setStep(2);
