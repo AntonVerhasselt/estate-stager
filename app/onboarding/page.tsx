@@ -183,6 +183,12 @@ export default function OnboardingPage() {
     );
   }
 
+  // Redirect if not authenticated
+  if (!user) {
+    router.push("/login");
+    return null;
+  }
+
   // Show loading state
   if (!userLoaded || !orgLoaded || !isInitialized) {
     return (
@@ -192,12 +198,6 @@ export default function OnboardingPage() {
         </div>
       </div>
     );
-  }
-
-  // Redirect if not authenticated
-  if (!user) {
-    router.push("/login");
-    return null;
   }
 
   const handleStep1Complete = () => {
