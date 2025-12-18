@@ -71,10 +71,12 @@ export default function NewPropertyPage() {
       const sourceUrl = flowState.step === "review" ? flowState.scrapedData.sourceUrl : undefined
       
       // Transform images: src -> url, and ensure roomType is not null
-      const images = data.images.map((img) => ({
-        url: img.src,
-        roomType: img.roomType as RoomType, // Already validated in ReviewEditStep
-      }))
+      const images = data.images
+        .filter((img) => img.roomType !== null)
+        .map((img) => ({
+          url: img.src,
+          roomType: img.roomType as RoomType,
+        }))
       
       const result = await createProperty({
         address: data.address,
