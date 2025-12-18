@@ -93,7 +93,7 @@ export function ReviewEditStep({
     
     if (hasError) return
     
-    onSubmit({ address: address.trim(), images, agentId })
+    onSubmit({ address: address.trim(), images, agentId: agentId! })
   }
 
   // Clear error when all images are properly tagged
