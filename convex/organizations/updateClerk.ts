@@ -16,6 +16,13 @@ export const updateOrganizationMetadata = action({
       throw new Error("Not authenticated");
     }
 
+    // Verify user belongs to this organization
+    // Option 1: Check via Clerk's org_id claim in the JWT
+    const userOrgId = identity.org_id;
+    if (userOrgId !== args.organizationId) {
+      throw new Error("Not authorized to update this organization");
+    }
+
     // Initialize Clerk backend client
     const client = createClerkClient({
       secretKey: process.env.CLERK_SECRET_KEY!,

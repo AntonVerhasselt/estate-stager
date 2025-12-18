@@ -10,7 +10,10 @@ export const createUser = mutation({
     }
 
     const clerkId = identity.subject; // Clerk user ID
-    const email = identity.email!;
+    const email = identity.email;
+    if (!email) {
+      throw new Error("Email is required");
+    }
 
     // Check if user already exists
     const existingUser = await ctx.db
