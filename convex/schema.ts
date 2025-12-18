@@ -11,8 +11,7 @@ export default defineSchema({
     organizationIds: v.optional(v.array(v.id("organizations"))),
   })
     .index("by_clerkId", ["clerkId"])
-    .index("by_email", ["email"])
-    .index("by_organizationIds", ["organizationIds"]),
+    .index("by_email", ["email"]),
 
   organizations: defineTable({
     clerkOrganizationId: v.string(), // Links to Clerk organization
