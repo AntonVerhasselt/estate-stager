@@ -17,9 +17,17 @@ export const updateUserMetadata = action({
 
     const userId = identity.subject;
 
+    // Validate Clerk secret key
+    const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+    if (!clerkSecretKey) {
+      throw new Error(
+        "Missing CLERK_SECRET_KEY environment variable required to create Clerk client"
+      );
+    }
+
     // Initialize Clerk backend client
     const client = createClerkClient({
-      secretKey: process.env.CLERK_SECRET_KEY!,
+      secretKey: clerkSecretKey,
     });
 
     // Update user metadata using Clerk backend SDK
@@ -45,9 +53,17 @@ export const updateUserInfo = action({
 
     const userId = identity.subject;
 
+    // Validate Clerk secret key
+    const clerkSecretKey = process.env.CLERK_SECRET_KEY;
+    if (!clerkSecretKey) {
+      throw new Error(
+        "Missing CLERK_SECRET_KEY environment variable required to create Clerk client"
+      );
+    }
+
     // Initialize Clerk backend client
     const client = createClerkClient({
-      secretKey: process.env.CLERK_SECRET_KEY!,
+      secretKey: clerkSecretKey,
     });
 
     // Update user info using Clerk backend SDK
