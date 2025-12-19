@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation"
 import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import type { Id } from "@/convex/_generated/dataModel"
+import { toast } from "sonner"
 import {
   ArrowLeft,
   CalendarPlus,
@@ -33,6 +34,7 @@ import {
   Trees,
   DoorOpen,
   Monitor,
+  Loader2,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -106,7 +108,7 @@ type Property = {
 }
 
 type Picture = {
-  id: string
+  id: Id<"images">
   imageUrl: string
   roomType: RoomType
   createdAt: Date
@@ -116,10 +118,6 @@ type Picture = {
 // CONSTANTS
 // ============================================================================
 const ITEMS_PER_PAGE_OPTIONS = [5, 10, 20]
-
-// Convex IDs are alphanumeric strings (base64url encoded)
-// They typically look like: j576ahgs5hfazt9...
-const CONVEX_ID_PATTERN = /^[a-z0-9]+$/i
 
 // ============================================================================
 // HELPERS
@@ -179,50 +177,20 @@ function fileToDataUrl(file: File): Promise<string> {
   })
 }
 
-/**
- * Validates that a string looks like a valid Convex ID.
- * Convex IDs are alphanumeric strings (base64url encoded).
- */
-function isValidConvexId(id: unknown): id is string {
-  if (typeof id !== "string") return false
-  if (id.length === 0) return false
-  // Convex IDs are typically 20+ characters but we allow some flexibility
-  if (id.length < 10 || id.length > 100) return false
-  return CONVEX_ID_PATTERN.test(id)
-}
-
 // ============================================================================
 // COMPONENTS
 // ============================================================================
-
-function InvalidPropertyIdError() {
-  return (
-    <div className="flex flex-col items-center justify-center min-h-[400px] px-4 text-center">
-      <div className="mb-4 rounded-full bg-destructive/10 p-4">
-        <ArrowLeft className="size-8 text-destructive" />
-      </div>
-      <h2 className="text-xl font-semibold mb-2">Invalid Property ID</h2>
-      <p className="text-muted-foreground mb-6 max-w-md">
-        The property ID in the URL is not valid. Please check the link and try again.
-      </p>
-      <Button asChild variant="outline">
-        <Link href="/dashboard">
-          <ArrowLeft data-icon="inline-start" />
-          Back to properties
-        </Link>
-      </Button>
-    </div>
-  )
-}
 
 function TitleRow({
   property,
   onMarkAsSold,
   onPlanVisit,
+  isSoldLoading,
 }: {
   property: Property
   onMarkAsSold: () => void
   onPlanVisit: () => void
+  isSoldLoading: boolean
 }) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -260,9 +228,16 @@ function TitleRow({
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={onMarkAsSold}>
-                  Mark as sold
+                <AlertDialogCancel disabled={isSoldLoading}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onMarkAsSold} disabled={isSoldLoading}>
+                  {isSoldLoading ? (
+                    <>
+                      <Loader2 className="animate-spin" data-icon="inline-start" />
+                      Marking as sold...
+                    </>
+                  ) : (
+                    "Mark as sold"
+                  )}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -560,9 +535,11 @@ function PicturesEmptyState({ onAddImages }: { onAddImages: () => void }) {
 function PictureCard({
   picture,
   onDelete,
+  isDeleting,
 }: {
   picture: Picture
-  onDelete: (id: string) => void
+  onDelete: (id: Id<"images">) => void
+  isDeleting: boolean
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false)
 
@@ -602,13 +579,18 @@ function PictureCard({
                     variant="ghost"
                     size="icon"
                     className="text-muted-foreground hover:text-foreground"
+                    disabled={isDeleting}
                     onClick={(e) => {
                       e.stopPropagation()
                       e.preventDefault()
                       setShowDeleteConfirm(true)
                     }}
                   >
-                    <Trash2 />
+                    {isDeleting ? (
+                      <Loader2 className="animate-spin" />
+                    ) : (
+                      <Trash2 />
+                    )}
                   </Button>
                 </div>
               </CardContent>
@@ -665,10 +647,12 @@ function PicturesSection({
   pictures,
   onDeletePicture,
   onAddImages,
+  isDeletingId,
 }: {
   pictures: Picture[]
-  onDeletePicture: (id: string) => void
+  onDeletePicture: (id: Id<"images">) => void
   onAddImages: () => void
+  isDeletingId: Id<"images"> | null
 }) {
   return (
     <Card>
@@ -699,6 +683,7 @@ function PicturesSection({
                 key={picture.id}
                 picture={picture}
                 onDelete={onDeletePicture}
+                isDeleting={isDeletingId === picture.id}
               />
             ))}
           </div>
@@ -721,18 +706,9 @@ export default function PropertyDetailPage({
   const router = useRouter()
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
-  // Validate the property ID before using it
-  const rawPropertyId = resolvedParams.propertyId
-  const isValidId = isValidConvexId(rawPropertyId)
-
-  // Only cast to Id<"properties"> after validation passes
-  const propertyId = isValidId ? (rawPropertyId as Id<"properties">) : null
-
-  // Fetch property data from Convex (skip query if ID is invalid)
-  const propertyData = useQuery(
-    api.properties.get.getPropertyById,
-    propertyId ? { propertyId } : "skip"
-  )
+  // Fetch property data from Convex
+  const propertyId = resolvedParams.propertyId as Id<"properties">
+  const propertyData = useQuery(api.properties.get.getPropertyById, { propertyId })
   const deleteImageMutation = useMutation(api.images.delete.deleteImage)
   const setStatusToSoldMutation = useMutation(api.properties.update.setStatusToSold)
   const generateUploadUrl = useMutation(api.images.create.generateUploadUrl)
@@ -746,10 +722,11 @@ export default function PropertyDetailPage({
   const [pendingImages, setPendingImages] = React.useState<PendingImage[]>([])
   const [isUploading, setIsUploading] = React.useState(false)
 
-  // Handle invalid property ID
-  if (!isValidId || !propertyId) {
-    return <InvalidPropertyIdError />
-  }
+  // State for delete image flow
+  const [isDeletingId, setIsDeletingId] = React.useState<Id<"images"> | null>(null)
+
+  // State for mark as sold
+  const [isSoldLoading, setIsSoldLoading] = React.useState(false)
 
   // Handle loading and error states
   if (propertyData === undefined) {
@@ -801,10 +778,15 @@ export default function PropertyDetailPage({
   })
 
   const handleMarkAsSold = async () => {
+    setIsSoldLoading(true)
     try {
       await setStatusToSoldMutation({ propertyId })
+      toast.success("Property marked as sold")
     } catch (error) {
-      console.error("Failed to mark property as sold:", error)
+      const message = error instanceof Error ? error.message : "Failed to mark property as sold"
+      toast.error(message)
+    } finally {
+      setIsSoldLoading(false)
     }
   }
 
@@ -817,11 +799,16 @@ export default function PropertyDetailPage({
     console.log("Added new visit:", visitData)
   }
 
-  const handleDeletePicture = async (id: string) => {
+  const handleDeletePicture = async (imageId: Id<"images">) => {
+    setIsDeletingId(imageId)
     try {
-      await deleteImageMutation({ imageId: id as Id<"images"> })
+      await deleteImageMutation({ imageId })
+      toast.success("Image deleted successfully")
     } catch (error) {
-      console.error("Failed to delete image:", error)
+      const message = error instanceof Error ? error.message : "Failed to delete image"
+      toast.error(message)
+    } finally {
+      setIsDeletingId(null)
     }
   }
 
@@ -882,10 +869,16 @@ export default function PropertyDetailPage({
         images: uploadedImages,
       })
 
+      // Clean up blob URLs after successful upload
+      images.forEach((img) => URL.revokeObjectURL(img.src))
       setPendingImages([])
+      toast.success("Images uploaded successfully")
     } catch (error) {
-      console.error("Failed to upload images:", error)
-      // TODO: Show error toast
+      const message = error instanceof Error ? error.message : "Unknown error"
+      toast.error(`Failed to upload images: ${message}`)
+      // Clean up blob URLs on error
+      images.forEach((img) => URL.revokeObjectURL(img.src))
+      setPendingImages([])
     } finally {
       setIsUploading(false)
     }
@@ -927,12 +920,14 @@ export default function PropertyDetailPage({
           property={property}
           onMarkAsSold={handleMarkAsSold}
           onPlanVisit={() => setPlanVisitOpen(true)}
+          isSoldLoading={isSoldLoading}
         />
         <VisitsSection visits={visits} onOpenVisit={handleOpenVisit} />
         <PicturesSection
           pictures={pictures}
           onDeletePicture={handleDeletePicture}
           onAddImages={handleAddImages}
+          isDeletingId={isDeletingId}
         />
       </div>
 

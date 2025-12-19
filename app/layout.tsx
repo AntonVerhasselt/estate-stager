@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Raleway } from "next/font/google";
 import "./globals.css";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ConvexClientProvider } from "./ConvexClientProvider";
+import { Toaster } from "@/components/ui/sonner";
 
 const raleway = Raleway({subsets:['latin'],variable:'--font-sans'});
 
@@ -37,6 +38,7 @@ export default function RootLayout({
           }}
         >
           <ConvexClientProvider>{children}</ConvexClientProvider>
+          <Toaster />
         </ClerkProvider>
       </body>
     </html>
