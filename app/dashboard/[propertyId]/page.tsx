@@ -117,6 +117,10 @@ type Picture = {
 // ============================================================================
 const ITEMS_PER_PAGE_OPTIONS = [5, 10, 20]
 
+// Convex IDs are alphanumeric strings (base64url encoded)
+// They typically look like: j576ahgs5hfazt9...
+const CONVEX_ID_PATTERN = /^[a-z0-9]+$/i
+
 // ============================================================================
 // HELPERS
 // ============================================================================
@@ -175,9 +179,41 @@ function fileToDataUrl(file: File): Promise<string> {
   })
 }
 
+/**
+ * Validates that a string looks like a valid Convex ID.
+ * Convex IDs are alphanumeric strings (base64url encoded).
+ */
+function isValidConvexId(id: unknown): id is string {
+  if (typeof id !== "string") return false
+  if (id.length === 0) return false
+  // Convex IDs are typically 20+ characters but we allow some flexibility
+  if (id.length < 10 || id.length > 100) return false
+  return CONVEX_ID_PATTERN.test(id)
+}
+
 // ============================================================================
 // COMPONENTS
 // ============================================================================
+
+function InvalidPropertyIdError() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[400px] px-4 text-center">
+      <div className="mb-4 rounded-full bg-destructive/10 p-4">
+        <ArrowLeft className="size-8 text-destructive" />
+      </div>
+      <h2 className="text-xl font-semibold mb-2">Invalid Property ID</h2>
+      <p className="text-muted-foreground mb-6 max-w-md">
+        The property ID in the URL is not valid. Please check the link and try again.
+      </p>
+      <Button asChild variant="outline">
+        <Link href="/dashboard">
+          <ArrowLeft data-icon="inline-start" />
+          Back to properties
+        </Link>
+      </Button>
+    </div>
+  )
+}
 
 function TitleRow({
   property,
@@ -685,9 +721,18 @@ export default function PropertyDetailPage({
   const router = useRouter()
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
-  // Fetch property data from Convex
-  const propertyId = resolvedParams.propertyId as Id<"properties">
-  const propertyData = useQuery(api.properties.get.getPropertyById, { propertyId })
+  // Validate the property ID before using it
+  const rawPropertyId = resolvedParams.propertyId
+  const isValidId = isValidConvexId(rawPropertyId)
+
+  // Only cast to Id<"properties"> after validation passes
+  const propertyId = isValidId ? (rawPropertyId as Id<"properties">) : null
+
+  // Fetch property data from Convex (skip query if ID is invalid)
+  const propertyData = useQuery(
+    api.properties.get.getPropertyById,
+    propertyId ? { propertyId } : "skip"
+  )
   const deleteImageMutation = useMutation(api.images.delete.deleteImage)
   const setStatusToSoldMutation = useMutation(api.properties.update.setStatusToSold)
   const generateUploadUrl = useMutation(api.images.create.generateUploadUrl)
@@ -700,6 +745,11 @@ export default function PropertyDetailPage({
   const [addImagesOpen, setAddImagesOpen] = React.useState(false)
   const [pendingImages, setPendingImages] = React.useState<PendingImage[]>([])
   const [isUploading, setIsUploading] = React.useState(false)
+
+  // Handle invalid property ID
+  if (!isValidId || !propertyId) {
+    return <InvalidPropertyIdError />
+  }
 
   // Handle loading and error states
   if (propertyData === undefined) {
