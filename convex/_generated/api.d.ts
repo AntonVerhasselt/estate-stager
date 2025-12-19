@@ -17,6 +17,7 @@ import type * as organizations_get from "../organizations/get.js";
 import type * as organizations_updateClerk from "../organizations/updateClerk.js";
 import type * as properties_create from "../properties/create.js";
 import type * as properties_createInternal from "../properties/createInternal.js";
+import type * as properties_get from "../properties/get.js";
 import type * as properties_list from "../properties/list.js";
 import type * as properties_scrape from "../properties/scrape.js";
 import type * as properties_updateInternal from "../properties/updateInternal.js";
@@ -41,6 +42,7 @@ declare const fullApi: ApiFromModules<{
   "organizations/updateClerk": typeof organizations_updateClerk;
   "properties/create": typeof properties_create;
   "properties/createInternal": typeof properties_createInternal;
+  "properties/get": typeof properties_get;
   "properties/list": typeof properties_list;
   "properties/scrape": typeof properties_scrape;
   "properties/updateInternal": typeof properties_updateInternal;

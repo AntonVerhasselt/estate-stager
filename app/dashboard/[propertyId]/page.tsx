@@ -4,6 +4,9 @@ import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import type { Id } from "@/convex/_generated/dataModel"
 import {
   ArrowLeft,
   CalendarPlus,
@@ -81,12 +84,6 @@ import {
 import { type RoomType as ImageGalleryRoomType } from "@/components/add-property/image-gallery"
 
 // ============================================================================
-// MOCK DATA TOGGLES - Set to true to test empty states
-// ============================================================================
-const MOCK_EMPTY_VISITS = false
-const MOCK_EMPTY_PICTURES = false
-
-// ============================================================================
 // TYPES
 // ============================================================================
 type PropertyStatus = "available" | "sold"
@@ -119,137 +116,6 @@ type Picture = {
 // CONSTANTS
 // ============================================================================
 const ITEMS_PER_PAGE_OPTIONS = [5, 10, 20]
-
-// ============================================================================
-// INITIAL MOCK DATA
-// ============================================================================
-const initialMockProperty: Property = {
-  id: "1",
-  address: "123 Oak Street, Brooklyn, NY 11201",
-  status: "available",
-}
-
-const initialMockVisits: Visit[] = MOCK_EMPTY_VISITS
-  ? []
-  : [
-      {
-        id: "v1",
-        startAt: new Date("2025-12-16T10:00:00"),
-        prospectName: "Sarah Johnson",
-        phoneNumber: "471234567",
-        countryCode: "+32",
-        status: "prepared",
-      },
-      {
-        id: "v2",
-        startAt: new Date("2025-12-14T14:30:00"),
-        prospectName: "Michael Chen",
-        phoneNumber: "612345678",
-        countryCode: "+31",
-        status: "completed",
-      },
-      {
-        id: "v3",
-        startAt: new Date("2025-12-12T11:00:00"),
-        prospectName: "Emily Davis",
-        phoneNumber: "678901234",
-        countryCode: "+33",
-        status: "cancelled",
-      },
-      {
-        id: "v4",
-        startAt: new Date("2025-12-18T16:00:00"),
-        prospectName: "Amanda Brown",
-        phoneNumber: "491234567",
-        countryCode: "+32",
-        status: "planned",
-      },
-      {
-        id: "v5",
-        startAt: new Date("2025-12-20T09:00:00"),
-        prospectName: "Robert Taylor",
-        phoneNumber: "478901234",
-        countryCode: "+32",
-        status: "planned",
-      },
-      {
-        id: "v6",
-        startAt: new Date("2025-12-10T15:00:00"),
-        prospectName: "Jennifer Martinez",
-        phoneNumber: "623456789",
-        countryCode: "+31",
-        status: "completed",
-      },
-      {
-        id: "v7",
-        startAt: new Date("2025-12-22T11:30:00"),
-        prospectName: "David Anderson",
-        phoneNumber: "156789012",
-        countryCode: "+49",
-        status: "prepared",
-      },
-    ]
-
-const initialMockPictures: Picture[] = MOCK_EMPTY_PICTURES
-  ? []
-  : [
-      {
-        id: "p1",
-        imageUrl:
-          "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&auto=format&fit=crop",
-        roomType: "living-room",
-        createdAt: new Date("2025-12-01"),
-      },
-      {
-        id: "p2",
-        imageUrl:
-          "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&auto=format&fit=crop",
-        roomType: "kitchen",
-        createdAt: new Date("2025-12-01"),
-      },
-      {
-        id: "p3",
-        imageUrl:
-          "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&auto=format&fit=crop",
-        roomType: "bedroom",
-        createdAt: new Date("2025-12-02"),
-      },
-      {
-        id: "p4",
-        imageUrl:
-          "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&auto=format&fit=crop",
-        roomType: "bathroom",
-        createdAt: new Date("2025-12-02"),
-      },
-      {
-        id: "p5",
-        imageUrl:
-          "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop",
-        roomType: "living-room",
-        createdAt: new Date("2025-12-03"),
-      },
-      {
-        id: "p6",
-        imageUrl:
-          "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&auto=format&fit=crop",
-        roomType: "kitchen",
-        createdAt: new Date("2025-12-03"),
-      },
-      {
-        id: "p7",
-        imageUrl:
-          "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop",
-        roomType: "bedroom",
-        createdAt: new Date("2025-12-04"),
-      },
-      {
-        id: "p8",
-        imageUrl:
-          "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=800&auto=format&fit=crop",
-        roomType: "other",
-        createdAt: new Date("2025-12-04"),
-      },
-    ]
 
 // ============================================================================
 // HELPERS
@@ -298,10 +164,6 @@ function getRoomTypeIcon(roomType: RoomType) {
     other: <ImageIcon className="size-3.5" />,
   }
   return icons[roomType]
-}
-
-function generateId(): string {
-  return `v${Date.now()}`
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -823,20 +685,68 @@ export default function PropertyDetailPage({
   const router = useRouter()
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
-  // State for all data
-  const [visits, setVisits] = React.useState<Visit[]>(initialMockVisits)
-  const [pictures, setPictures] = React.useState<Picture[]>(initialMockPictures)
+  // Fetch property data from Convex
+  const propertyId = resolvedParams.propertyId as Id<"properties">
+  const propertyData = useQuery(api.properties.get.getPropertyById, { propertyId })
+
+  // State for UI
   const [planVisitOpen, setPlanVisitOpen] = React.useState(false)
 
   // State for add images flow
   const [addImagesOpen, setAddImagesOpen] = React.useState(false)
   const [pendingImages, setPendingImages] = React.useState<PendingImage[]>([])
 
-  // In a real app, we'd fetch data based on params.propertyId
-  console.log("Property ID:", resolvedParams.propertyId)
+  // Handle loading and error states
+  if (propertyData === undefined) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    )
+  }
+
+  if (propertyData === null) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-muted-foreground">Property not found</div>
+      </div>
+    )
+  }
+
+  // Transform property data
+  const property: Property = {
+    id: propertyData._id,
+    address: propertyData.address,
+    status: propertyData.status,
+  }
+
+  // Transform images to pictures
+  const pictures: Picture[] = propertyData.images.map((img) => ({
+    id: img._id,
+    imageUrl: img.imageUrl ?? "",
+    roomType: img.roomType,
+    createdAt: new Date(img._creationTime),
+  }))
+
+  // Transform visits - parse phone number to extract country code
+  const visits: Visit[] = propertyData.visits.map((v) => {
+    // Extract country code from phone number (e.g., "+32471234567" -> "+32" and "471234567")
+    const phoneMatch = v.phoneNumber.match(/^(\+\d{1,3})(.+)$/)
+    const countryCode = phoneMatch ? phoneMatch[1] : "+32"
+    const phoneNumber = phoneMatch ? phoneMatch[2] : v.phoneNumber
+
+    return {
+      id: v._id,
+      startAt: new Date(v.startAt),
+      prospectName: v.prospectName,
+      phoneNumber,
+      countryCode,
+      status: v.status,
+    }
+  })
 
   const handleMarkAsSold = () => {
-    console.log("Mark as sold confirmed for property:", initialMockProperty.id)
+    console.log("Mark as sold confirmed for property:", property.id)
   }
 
   const handleOpenVisit = (id: string) => {
@@ -844,17 +754,12 @@ export default function PropertyDetailPage({
   }
 
   const handleAddVisit = (visitData: VisitFormData) => {
-    const newVisit: Visit = {
-      ...visitData,
-      id: generateId(),
-      status: "planned",
-    }
-    setVisits((prev) => [...prev, newVisit])
-    console.log("Added new visit:", newVisit)
+    // TODO: Implement visit creation mutation
+    console.log("Added new visit:", visitData)
   }
 
   const handleDeletePicture = (id: string) => {
-    setPictures((prev) => prev.filter((p) => p.id !== id))
+    // TODO: Implement picture deletion mutation
     console.log("Deleted picture:", id)
   }
 
@@ -881,23 +786,9 @@ export default function PropertyDetailPage({
   }
 
   const handleAddImagesSubmit = async (images: PendingImage[]) => {
-    // Convert blob URLs to data URLs so they persist after blob URLs are revoked
-    const newPictures: Picture[] = await Promise.all(
-      images.map(async (img) => {
-        // Read the file as a data URL instead of using the blob URL
-        const dataUrl = await fileToDataUrl(img.file)
-        return {
-          id: img.id,
-          imageUrl: dataUrl,
-          roomType: img.roomType as RoomType,
-          createdAt: new Date(),
-        }
-      })
-    )
-
-    setPictures((prev) => [...prev, ...newPictures])
+    // TODO: Implement image upload mutation
+    console.log("Added images:", images)
     setPendingImages([])
-    console.log("Added images:", newPictures)
   }
 
   const handleAddImagesOpenChange = (open: boolean) => {
@@ -933,7 +824,7 @@ export default function PropertyDetailPage({
         </div>
 
         <TitleRow
-          property={initialMockProperty}
+          property={property}
           onMarkAsSold={handleMarkAsSold}
           onPlanVisit={() => setPlanVisitOpen(true)}
         />
