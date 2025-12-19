@@ -3,6 +3,9 @@
 import * as React from "react"
 import Link from "next/link"
 import { SearchIcon, FilterIcon, ChevronDownIcon, PlusIcon } from "lucide-react"
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import type { Id } from "@/convex/_generated/dataModel"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -10,7 +13,6 @@ import {
   Card,
   CardHeader,
   CardTitle,
-  CardContent,
 } from "@/components/ui/card"
 import {
   DropdownMenu,
@@ -22,57 +24,21 @@ import {
 } from "@/components/ui/dropdown-menu"
 
 type Property = {
-  id: string
+  _id: Id<"properties">
   address: string
-  image: string
+  imageUrl: string | null
   status: "available" | "sold"
 }
-
-const mockProperties: Property[] = [
-  {
-    id: "1",
-    address: "123 Oak Street, Brooklyn, NY 11201",
-    image: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop",
-    status: "available",
-  },
-  {
-    id: "2",
-    address: "456 Maple Avenue, Los Angeles, CA 90001",
-    image: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop",
-    status: "available",
-  },
-  {
-    id: "3",
-    address: "789 Pine Road, Miami, FL 33101",
-    image: "https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?w=800&auto=format&fit=crop",
-    status: "sold",
-  },
-  {
-    id: "4",
-    address: "321 Cedar Lane, Seattle, WA 98101",
-    image: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&auto=format&fit=crop",
-    status: "available",
-  },
-  {
-    id: "5",
-    address: "654 Birch Boulevard, Chicago, IL 60601",
-    image: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&auto=format&fit=crop",
-    status: "sold",
-  },
-  {
-    id: "6",
-    address: "987 Elm Court, Austin, TX 73301",
-    image: "https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=800&auto=format&fit=crop",
-    status: "available",
-  },
-]
 
 export default function DashboardPage() {
   const [searchQuery, setSearchQuery] = React.useState("")
   const [showAvailable, setShowAvailable] = React.useState(true)
   const [showSold, setShowSold] = React.useState(false)
 
-  const filteredProperties = mockProperties.filter((property) => {
+  // Fetch properties from Convex
+  const properties = useQuery(api.properties.list.listProperties) ?? []
+
+  const filteredProperties = properties.filter((property) => {
     // Filter by search query
     const matchesSearch = property.address
       .toLowerCase()
@@ -158,13 +124,19 @@ export default function DashboardPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProperties.map((property) => (
-            <Link key={property.id} href={`/dashboard/${property.id}`}>
+            <Link key={property._id} href={`/dashboard/${property._id}`}>
               <Card className="overflow-hidden pt-0 transition-all hover:ring-2 hover:ring-primary/50 cursor-pointer">
-                <img
-                  src={property.image}
-                  alt={property.address}
-                  className="aspect-video w-full object-cover"
-                />
+                {property.imageUrl ? (
+                  <img
+                    src={property.imageUrl}
+                    alt={property.address}
+                    className="aspect-video w-full object-cover"
+                  />
+                ) : (
+                  <div className="aspect-video w-full bg-muted flex items-center justify-center">
+                    <span className="text-muted-foreground text-sm">No image</span>
+                  </div>
+                )}
                 <CardHeader>
                   <div className="flex items-start justify-between gap-2">
                     <CardTitle className="line-clamp-2">{property.address}</CardTitle>
