@@ -27,6 +27,10 @@ export const getOrganization = internalQuery({
     // Get the organization document from the database
     const organization = await ctx.db.get(userOrgIds[0]);
 
+    if (!organization) {
+      return null; // Organization not found or deleted
+    }
+
     return organization;
   },
 });
