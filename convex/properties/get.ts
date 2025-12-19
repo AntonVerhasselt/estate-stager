@@ -21,12 +21,13 @@ export const getPropertyById = query({
       return null;
     }
 
-    // 4. Get all images with storage URLs
+    // 4. Get all images with storage URLs (filter out images without valid URLs)
     const images = await Promise.all(
       (property.images ?? []).map(async (imageId) => {
         const image = await ctx.db.get(imageId);
         if (!image) return null;
         const url = await ctx.storage.getUrl(image.storageId);
+        if (!url) return null;
         return { ...image, imageUrl: url };
       })
     ).then((imgs) => imgs.filter((img): img is NonNullable<typeof img> => img !== null));
