@@ -4,7 +4,7 @@ import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useQuery } from "convex/react"
+import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import type { Id } from "@/convex/_generated/dataModel"
 import {
@@ -688,6 +688,7 @@ export default function PropertyDetailPage({
   // Fetch property data from Convex
   const propertyId = resolvedParams.propertyId as Id<"properties">
   const propertyData = useQuery(api.properties.get.getPropertyById, { propertyId })
+  const deleteImageMutation = useMutation(api.images.delete.deleteImage)
 
   // State for UI
   const [planVisitOpen, setPlanVisitOpen] = React.useState(false)
@@ -758,9 +759,12 @@ export default function PropertyDetailPage({
     console.log("Added new visit:", visitData)
   }
 
-  const handleDeletePicture = (id: string) => {
-    // TODO: Implement picture deletion mutation
-    console.log("Deleted picture:", id)
+  const handleDeletePicture = async (id: string) => {
+    try {
+      await deleteImageMutation({ imageId: id as Id<"images"> })
+    } catch (error) {
+      console.error("Failed to delete image:", error)
+    }
   }
 
   const handleAddImages = () => {

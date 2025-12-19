@@ -9,6 +9,7 @@
  */
 
 import type * as images_create from "../images/create.js";
+import type * as images_delete from "../images/delete.js";
 import type * as images_filter from "../images/filter.js";
 import type * as images_store from "../images/store.js";
 import type * as lib_clerk from "../lib/clerk.js";
@@ -34,6 +35,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   "images/create": typeof images_create;
+  "images/delete": typeof images_delete;
   "images/filter": typeof images_filter;
   "images/store": typeof images_store;
   "lib/clerk": typeof lib_clerk;
