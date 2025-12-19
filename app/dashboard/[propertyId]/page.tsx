@@ -690,6 +690,8 @@ export default function PropertyDetailPage({
   const propertyData = useQuery(api.properties.get.getPropertyById, { propertyId })
   const deleteImageMutation = useMutation(api.images.delete.deleteImage)
   const setStatusToSoldMutation = useMutation(api.properties.update.setStatusToSold)
+  const generateUploadUrl = useMutation(api.images.create.generateUploadUrl)
+  const addImagesToProperty = useMutation(api.images.create.addImagesToProperty)
 
   // State for UI
   const [planVisitOpen, setPlanVisitOpen] = React.useState(false)
@@ -697,6 +699,7 @@ export default function PropertyDetailPage({
   // State for add images flow
   const [addImagesOpen, setAddImagesOpen] = React.useState(false)
   const [pendingImages, setPendingImages] = React.useState<PendingImage[]>([])
+  const [isUploading, setIsUploading] = React.useState(false)
 
   // Handle loading and error states
   if (propertyData === undefined) {
@@ -795,9 +798,47 @@ export default function PropertyDetailPage({
   }
 
   const handleAddImagesSubmit = async (images: PendingImage[]) => {
-    // TODO: Implement image upload mutation
-    console.log("Added images:", images)
-    setPendingImages([])
+    setIsUploading(true)
+    try {
+      // Upload each image to Convex storage
+      const uploadedImages = await Promise.all(
+        images.map(async (img) => {
+          // Get upload URL
+          const uploadUrl = await generateUploadUrl()
+          
+          // Upload the file
+          const response = await fetch(uploadUrl, {
+            method: "POST",
+            headers: { "Content-Type": img.file.type },
+            body: img.file,
+          })
+          
+          if (!response.ok) {
+            throw new Error(`Failed to upload image: ${response.statusText}`)
+          }
+          
+          const { storageId } = await response.json()
+          
+          return {
+            storageId,
+            roomType: img.roomType as ImageGalleryRoomType,
+          }
+        })
+      )
+
+      // Create records and update property
+      await addImagesToProperty({
+        propertyId,
+        images: uploadedImages,
+      })
+
+      setPendingImages([])
+    } catch (error) {
+      console.error("Failed to upload images:", error)
+      // TODO: Show error toast
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   const handleAddImagesOpenChange = (open: boolean) => {
