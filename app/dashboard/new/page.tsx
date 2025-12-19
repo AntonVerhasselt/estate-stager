@@ -2,43 +2,18 @@
 
 import * as React from "react"
 import { useRouter } from "next/navigation"
+import { useAction } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import type { Id } from "@/convex/_generated/dataModel"
 import { UrlInputStep } from "@/components/add-property/url-input-step"
-import { ReviewEditStep } from "@/components/add-property/review-edit-step"
-import type { PropertyImage } from "@/components/add-property/image-gallery"
-
-// Mock scrape results for different scenarios
-const MOCK_SCRAPE_RESULTS: Record<string, { address: string | null; images: PropertyImage[] }> = {
-  // Full success - both address and images
-  "https://realestate.example.com/listing/123": {
-    address: "742 Evergreen Terrace, Springfield, IL 62701",
-    images: [
-      { src: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&auto=format&fit=crop", roomType: null },
-      { src: "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop", roomType: null },
-      { src: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&auto=format&fit=crop", roomType: null },
-      { src: "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&auto=format&fit=crop", roomType: null },
-    ],
-  },
-  // Only address, no images
-  "https://realestate.example.com/listing/456": {
-    address: "123 Main Street, Boston, MA 02101",
-    images: [],
-  },
-  // Only images, no address
-  "https://realestate.example.com/listing/789": {
-    address: null,
-    images: [
-      { src: "https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?w=800&auto=format&fit=crop", roomType: null },
-      { src: "https://images.unsplash.com/photo-1600573472550-8090b5e0745e?w=800&auto=format&fit=crop", roomType: null },
-    ],
-  },
-}
-
-// Default result when URL doesn't match any mock
-const DEFAULT_SCRAPE_RESULT: ScrapedData = { address: null, images: [] }
+import { ReviewEditStep, type User } from "@/components/add-property/review-edit-step"
+import type { PropertyImage, RoomType } from "@/components/add-property/image-gallery"
 
 type ScrapedData = {
   address: string | null
   images: PropertyImage[]
+  users: User[]
+  sourceUrl?: string
 }
 
 type FlowState =
@@ -46,29 +21,32 @@ type FlowState =
   | { step: "scraping" }
   | { step: "review"; scrapedData: ScrapedData }
 
-async function simulateScrape(url: string): Promise<ScrapedData> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 1500))
-  
-  // Return mock data based on URL, or default if not found
-  return MOCK_SCRAPE_RESULTS[url] || DEFAULT_SCRAPE_RESULT
-}
-
 export default function NewPropertyPage() {
   const router = useRouter()
   const [flowState, setFlowState] = React.useState<FlowState>({ step: "url-input" })
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+  const [submitError, setSubmitError] = React.useState<string | null>(null)
+  
+  const scrapePropertyUrl = useAction(api.properties.scrape.scrapePropertyUrl)
+  const createProperty = useAction(api.properties.create.createProperty)
 
   const handleUrlSubmit = async (url: string) => {
     setFlowState({ step: "scraping" })
     
     try {
-      const scrapedData = await simulateScrape(url)
+      const result = await scrapePropertyUrl({ url })
+      const scrapedData: ScrapedData = {
+        address: result.address,
+        images: (result.imageUrls ?? []).map((src) => ({ src, roomType: null })),
+        users: (result.users ?? []) as User[],
+        sourceUrl: url,
+      }
       setFlowState({ step: "review", scrapedData })
     } catch (error) {
       // On error, go to review with empty data
       setFlowState({
         step: "review",
-        scrapedData: { address: null, images: [] },
+        scrapedData: { address: null, images: [], users: [] },
       })
     }
   }
@@ -76,7 +54,7 @@ export default function NewPropertyPage() {
   const handleSkip = () => {
     setFlowState({
       step: "review",
-      scrapedData: { address: null, images: [] },
+      scrapedData: { address: null, images: [], users: [] },
     })
   }
 
@@ -84,16 +62,36 @@ export default function NewPropertyPage() {
     setFlowState({ step: "url-input" })
   }
 
-  const handleSubmit = (data: { address: string; images: PropertyImage[]; agentId: string }) => {
-    // Mock save - in production this would call an API
-    console.log("Saving property:", data)
+  const handleSubmit = async (data: { address: string; images: PropertyImage[]; agentId: string }) => {
+    setIsSubmitting(true)
+    setSubmitError(null)
     
-    // Mock: Generate a new property ID (simulating DB response)
-    const newPropertyId = crypto.randomUUID()
-    console.log("Created property with ID:", newPropertyId)
-    
-    // Redirect to the new property's detail page
-    router.push(`/dashboard/${newPropertyId}`)
+    try {
+      // Get sourceUrl from flow state if available
+      const sourceUrl = flowState.step === "review" ? flowState.scrapedData.sourceUrl : undefined
+      
+      // Transform images: src -> url, and ensure roomType is not null
+      const images = data.images
+        .filter((img) => img.roomType !== null)
+        .map((img) => ({
+          url: img.src,
+          roomType: img.roomType as RoomType,
+        }))
+      
+      const result = await createProperty({
+        address: data.address,
+        sourceUrl,
+        images,
+        userId: data.agentId as Id<"users">,
+      })
+      
+      // Redirect to the new property's detail page
+      router.push(`/dashboard/${result.propertyId}`)
+    } catch (error) {
+      console.error("Failed to create property:", error)
+      setSubmitError(error instanceof Error ? error.message : "Failed to create property")
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -110,8 +108,11 @@ export default function NewPropertyPage() {
         <ReviewEditStep
           initialAddress={flowState.scrapedData.address}
           initialImages={flowState.scrapedData.images}
+          users={flowState.scrapedData.users}
           onBack={handleBack}
           onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+          submitError={submitError}
         />
       )}
     </div>

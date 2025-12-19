@@ -30,8 +30,8 @@ export default defineSchema({
     status: v.union(v.literal("available"), v.literal("sold")),
     organizationId: v.id("organizations"),
     userId: v.id("users"), // Created by / assigned to
-    // Optional: source URL if scraped from listing site
     sourceUrl: v.optional(v.string()),
+    images: v.array(v.id("images")),
   })
     .index("by_organizationId", ["organizationId"])
     .index("by_userId", ["userId"])

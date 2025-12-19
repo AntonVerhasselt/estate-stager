@@ -16,48 +16,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ImageGallery, type PropertyImage } from "./image-gallery"
 
-// Mock agents data
-type Agent = {
-  id: string
-  name: string
-  avatar: string
-  initials: string
+// User type matching the data from listOrganizationUsers
+export type User = {
+  _id: string
+  fullName: string
+  current: boolean
 }
-
-const MOCK_AGENTS: Agent[] = [
-  { id: "1", name: "Sarah Johnson", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&auto=format&fit=crop", initials: "SJ" },
-  { id: "2", name: "Michael Chen", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&auto=format&fit=crop", initials: "MC" },
-  { id: "3", name: "Emily Davis", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&auto=format&fit=crop", initials: "ED" },
-  { id: "4", name: "James Wilson", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&auto=format&fit=crop", initials: "JW" },
-  { id: "5", name: "Lisa Martinez", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop", initials: "LM" },
-]
 
 type ReviewEditStepProps = {
   initialAddress: string | null
   initialImages: PropertyImage[]
+  users: User[]
   onBack: () => void
   onSubmit: (data: { address: string; images: PropertyImage[]; agentId: string }) => void
+  isSubmitting?: boolean
+  submitError?: string | null
 }
 
 export function ReviewEditStep({
   initialAddress,
   initialImages,
+  users,
   onBack,
   onSubmit,
+  isSubmitting = false,
+  submitError = null,
 }: ReviewEditStepProps) {
-  const [address, setAddress] = React.useState<string>(initialAddress || "")
+  const [address, setAddress] = React.useState(initialAddress || "")
   const [images, setImages] = React.useState<PropertyImage[]>(initialImages)
-  const [agentId, setAgentId] = React.useState<string | null>(null)
+  const [agentId, setAgentId] = React.useState<string | null>(
+    () => users.find((u) => u.current)?._id ?? null
+  )
   const [addressError, setAddressError] = React.useState<string | null>(null)
   const [imagesError, setImagesError] = React.useState<string | null>(null)
   const [agentError, setAgentError] = React.useState<string | null>(null)
   const [showImageValidationErrors, setShowImageValidationErrors] = React.useState(false)
-
-  // Get selected agent for display
-  const selectedAgent = MOCK_AGENTS.find((a) => a.id === agentId)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -98,7 +93,6 @@ export function ReviewEditStep({
     
     if (hasError) return
     
-    // TypeScript: We've validated that address is not empty and agentId is not null
     onSubmit({ address: address.trim(), images, agentId: agentId! })
   }
 
@@ -130,6 +124,7 @@ export function ReviewEditStep({
           variant="ghost"
           size="icon-sm"
           onClick={onBack}
+          disabled={isSubmitting}
         >
           <ArrowLeftIcon className="size-4" />
           <span className="sr-only">Go back</span>
@@ -192,28 +187,12 @@ export function ReviewEditStep({
             }}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select an agent...">
-                {selectedAgent && (
-                  <div className="flex items-center gap-2">
-                    <Avatar size="sm">
-                      <AvatarImage src={selectedAgent.avatar} alt={selectedAgent.name} />
-                      <AvatarFallback>{selectedAgent.initials}</AvatarFallback>
-                    </Avatar>
-                    <span>{selectedAgent.name}</span>
-                  </div>
-                )}
-              </SelectValue>
+              <SelectValue placeholder="Select an agent..." />
             </SelectTrigger>
             <SelectContent>
-              {MOCK_AGENTS.map((agent) => (
-                <SelectItem key={agent.id} value={agent.id}>
-                  <div className="flex items-center gap-2">
-                    <Avatar size="sm">
-                      <AvatarImage src={agent.avatar} alt={agent.name} />
-                      <AvatarFallback>{agent.initials}</AvatarFallback>
-                    </Avatar>
-                    <span>{agent.name}</span>
-                  </div>
+              {users.map((user) => (
+                <SelectItem key={user._id} value={user._id}>
+                  {user.fullName}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -222,9 +201,12 @@ export function ReviewEditStep({
         </div>
 
         {/* Submit Button - Sticky on mobile */}
-        <div className="pt-4 border-t">
-          <Button type="submit" className="w-full sm:w-auto">
-            Add Property
+        <div className="pt-4 border-t space-y-3">
+          {submitError && (
+            <p className="text-sm text-destructive">{submitError}</p>
+          )}
+          <Button type="submit" className="w-full sm:w-auto" disabled={isSubmitting}>
+            {isSubmitting ? "Adding Property..." : "Add Property"}
           </Button>
         </div>
       </form>
