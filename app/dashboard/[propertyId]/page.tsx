@@ -689,6 +689,7 @@ export default function PropertyDetailPage({
   const propertyId = resolvedParams.propertyId as Id<"properties">
   const propertyData = useQuery(api.properties.get.getPropertyById, { propertyId })
   const deleteImageMutation = useMutation(api.images.delete.deleteImage)
+  const setStatusToSoldMutation = useMutation(api.properties.update.setStatusToSold)
 
   // State for UI
   const [planVisitOpen, setPlanVisitOpen] = React.useState(false)
@@ -746,8 +747,12 @@ export default function PropertyDetailPage({
     }
   })
 
-  const handleMarkAsSold = () => {
-    console.log("Mark as sold confirmed for property:", property.id)
+  const handleMarkAsSold = async () => {
+    try {
+      await setStatusToSoldMutation({ propertyId })
+    } catch (error) {
+      console.error("Failed to mark property as sold:", error)
+    }
   }
 
   const handleOpenVisit = (id: string) => {

@@ -21,6 +21,7 @@ import type * as properties_createInternal from "../properties/createInternal.js
 import type * as properties_get from "../properties/get.js";
 import type * as properties_list from "../properties/list.js";
 import type * as properties_scrape from "../properties/scrape.js";
+import type * as properties_update from "../properties/update.js";
 import type * as properties_updateInternal from "../properties/updateInternal.js";
 import type * as users_create from "../users/create.js";
 import type * as users_list from "../users/list.js";
@@ -47,6 +48,7 @@ declare const fullApi: ApiFromModules<{
   "properties/get": typeof properties_get;
   "properties/list": typeof properties_list;
   "properties/scrape": typeof properties_scrape;
+  "properties/update": typeof properties_update;
   "properties/updateInternal": typeof properties_updateInternal;
   "users/create": typeof users_create;
   "users/list": typeof users_list;
