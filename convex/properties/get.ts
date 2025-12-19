@@ -29,7 +29,7 @@ export const getPropertyById = query({
         const url = await ctx.storage.getUrl(image.storageId);
         return { ...image, imageUrl: url };
       })
-    ).then((imgs) => imgs.filter(Boolean));
+    ).then((imgs) => imgs.filter((img): img is NonNullable<typeof img> => img !== null));
 
     // 5. Get visits for this property
     const visits = await ctx.db
