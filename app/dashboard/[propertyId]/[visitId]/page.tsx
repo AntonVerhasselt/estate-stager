@@ -3,7 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useQuery } from "convex/react"
+import { useQuery, useMutation } from "convex/react"
 import { api } from "@/convex/_generated/api"
 import type { Id } from "@/convex/_generated/dataModel"
 import {
@@ -123,10 +123,16 @@ export default function VisitDetailPage({
     visitId: resolvedParams.visitId as Id<"visits">,
   })
 
+  // Mutations
+  const cancelVisitMutation = useMutation(api.visits.update.cancelVisit)
+  const updateVisitMutation = useMutation(api.visits.update.updateVisit)
+
   // State
   const [editSheetOpen, setEditSheetOpen] = React.useState(false)
   const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false)
   const [linkCopied, setLinkCopied] = React.useState(false)
+  const [isCancelling, setIsCancelling] = React.useState(false)
+  const [isUpdating, setIsUpdating] = React.useState(false)
   const [styleProfile, setStyleProfile] = React.useState<StyleProfile | null>(
     null
   )
@@ -194,15 +200,34 @@ export default function VisitDetailPage({
     createdAt: new Date(visitData.visit.createdAt),
   }))
 
-  const handleEditSubmit = (_data: VisitFormData) => {
-    // TODO: Implement update mutation
-    // For now, just close the sheet
-    setEditSheetOpen(false)
+  const handleEditSubmit = async (data: VisitFormData) => {
+    setIsUpdating(true)
+    try {
+      await updateVisitMutation({
+        visitId: resolvedParams.visitId as Id<"visits">,
+        prospectName: data.prospectName,
+        phoneNumber: data.phoneNumber,
+        startAt: data.startAt.getTime(), // Convert Date to Unix timestamp
+      })
+      setEditSheetOpen(false)
+    } catch (error) {
+      console.error("Failed to update visit:", error)
+      throw error // Re-throw to prevent sheet from closing
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
-  const handleCancel = () => {
-    // TODO: Implement cancel mutation
-    setCancelDialogOpen(false)
+  const handleCancel = async () => {
+    setIsCancelling(true)
+    try {
+      await cancelVisitMutation({ visitId: resolvedParams.visitId as Id<"visits"> })
+      setCancelDialogOpen(false)
+    } catch (error) {
+      console.error("Failed to cancel visit:", error)
+    } finally {
+      setIsCancelling(false)
+    }
   }
 
   const handleDeleteStagedImage = (id: string) => {
@@ -416,12 +441,13 @@ export default function VisitDetailPage({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep visit</AlertDialogCancel>
+            <AlertDialogCancel disabled={isCancelling}>Keep visit</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleCancel}
+              disabled={isCancelling}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Cancel visit
+              {isCancelling ? "Cancelling..." : "Cancel visit"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

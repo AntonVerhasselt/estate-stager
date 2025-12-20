@@ -29,6 +29,7 @@ import type * as users_update from "../users/update.js";
 import type * as users_updateClerk from "../users/updateClerk.js";
 import type * as visits_create from "../visits/create.js";
 import type * as visits_get from "../visits/get.js";
+import type * as visits_update from "../visits/update.js";
 
 import type {
   ApiFromModules,
@@ -58,6 +59,7 @@ declare const fullApi: ApiFromModules<{
   "users/updateClerk": typeof users_updateClerk;
   "visits/create": typeof visits_create;
   "visits/get": typeof visits_get;
+  "visits/update": typeof visits_update;
 }>;
 
 /**
