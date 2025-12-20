@@ -22,6 +22,7 @@ import {
   XCircle,
   Palette,
 } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -227,6 +228,11 @@ export default function VisitDetailPage({
       setCancelDialogOpen(false)
     } catch (error) {
       console.error("Failed to cancel visit:", error)
+      const message =
+        error instanceof Error ? error.message : "An unexpected error occurred"
+      toast.error("Failed to cancel visit", {
+        description: message,
+      })
     } finally {
       setIsCancelling(false)
     }
@@ -445,7 +451,10 @@ export default function VisitDetailPage({
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isCancelling}>Keep visit</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleCancel}
+              onClick={async (event) => {
+                event.preventDefault()
+                await handleCancel()
+              }}
               disabled={isCancelling}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >

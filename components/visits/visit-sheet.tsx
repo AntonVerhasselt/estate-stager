@@ -42,18 +42,6 @@ type VisitSheetProps = {
 }
 
 // ============================================================================
-// CONSTANTS
-// ============================================================================
-const COUNTRY_CODES = [
-  { code: "+32", country: "Belgium", flag: "🇧🇪" },
-  { code: "+31", country: "Netherlands", flag: "🇳🇱" },
-  { code: "+33", country: "France", flag: "🇫🇷" },
-  { code: "+49", country: "Germany", flag: "🇩🇪" },
-  { code: "+44", country: "UK", flag: "🇬🇧" },
-  { code: "+1", country: "US", flag: "🇺🇸" },
-]
-
-// ============================================================================
 // HELPERS
 // ============================================================================
 function getMinDateTime(): string {
@@ -167,7 +155,7 @@ export function VisitSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
+        <form id="visit-form" onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
           <div className="space-y-2">
             <Label htmlFor="prospectName">Prospect name</Label>
             <Input
@@ -216,7 +204,8 @@ export function VisitSheet({
             </Button>
           </SheetClose>
           <Button
-            onClick={handleSubmit}
+            type="submit"
+            form="visit-form"
             disabled={!isValid || isSubmitting}
             className="w-full sm:w-auto"
           >
