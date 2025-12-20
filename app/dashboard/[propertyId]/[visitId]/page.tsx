@@ -3,6 +3,9 @@
 import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useQuery, useMutation } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import type { Id } from "@/convex/_generated/dataModel"
 import {
   ArrowLeft,
   Calendar,
@@ -19,6 +22,7 @@ import {
   XCircle,
   Palette,
 } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -47,60 +51,9 @@ import {
 } from "@/components/visits/style-preferences"
 import {
   StagedImageGallery,
-  mockStagedImages,
   type StagedImage,
+  type RoomType,
 } from "@/components/visits/staged-image-gallery"
-
-// ============================================================================
-// TYPES
-// ============================================================================
-type Property = {
-  id: string
-  address: string
-}
-
-// ============================================================================
-// MOCK DATA
-// ============================================================================
-const mockProperty: Property = {
-  id: "1",
-  address: "123 Oak Street, Brooklyn, NY 11201",
-}
-
-const mockVisits: Record<string, Visit> = {
-  v1: {
-    id: "v1",
-    startAt: new Date("2025-12-16T10:00:00"),
-    prospectName: "Sarah Johnson",
-    phoneNumber: "471234567",
-    countryCode: "+32",
-    status: "prepared",
-  },
-  v2: {
-    id: "v2",
-    startAt: new Date("2025-12-14T14:30:00"),
-    prospectName: "Michael Chen",
-    phoneNumber: "612345678",
-    countryCode: "+31",
-    status: "completed",
-  },
-  v3: {
-    id: "v3",
-    startAt: new Date("2025-12-12T11:00:00"),
-    prospectName: "Emily Davis",
-    phoneNumber: "678901234",
-    countryCode: "+33",
-    status: "cancelled",
-  },
-  v4: {
-    id: "v4",
-    startAt: new Date("2025-12-18T16:00:00"),
-    prospectName: "Amanda Brown",
-    phoneNumber: "491234567",
-    countryCode: "+32",
-    status: "planned",
-  },
-}
 
 // ============================================================================
 // HELPERS
@@ -116,8 +69,24 @@ function formatDateTime(date: Date): string {
   })
 }
 
-function formatPhoneNumber(countryCode: string, phoneNumber: string): string {
-  return `${countryCode} ${phoneNumber}`
+// Map database roomType to StagedImage RoomType
+function mapRoomType(
+  dbRoomType: "living-room" | "kitchen" | "bedroom" | "bathroom" | "garden" | "hall" | "desk-area" | "other"
+): RoomType {
+  switch (dbRoomType) {
+    case "living-room":
+      return "living"
+    case "kitchen":
+    case "bedroom":
+    case "bathroom":
+      return dbRoomType
+    case "garden":
+    case "hall":
+    case "desk-area":
+    case "other":
+    default:
+      return "other"
+  }
 }
 
 function getStatusBadgeStyle(status: VisitStatus): string {
@@ -150,32 +119,45 @@ export default function VisitDetailPage({
   const resolvedParams = React.use(params)
   const router = useRouter()
 
-  // Get mock visit data
-  const initialVisit = mockVisits[resolvedParams.visitId]
+  // Fetch visit data from database
+  const visitData = useQuery(api.visits.get.getVisitById, {
+    visitId: resolvedParams.visitId as Id<"visits">,
+  })
 
-  // Generate prospect link
-  const prospectLink = `estager.com/${resolvedParams.visitId}`
+  // Mutations
+  const cancelVisitMutation = useMutation(api.visits.update.cancelVisit)
+  const updateVisitMutation = useMutation(api.visits.update.updateVisit)
 
   // State
-  const [visit, setVisit] = React.useState<Visit | null>(initialVisit || null)
   const [editSheetOpen, setEditSheetOpen] = React.useState(false)
   const [cancelDialogOpen, setCancelDialogOpen] = React.useState(false)
   const [linkCopied, setLinkCopied] = React.useState(false)
+  const [isCancelling, setIsCancelling] = React.useState(false)
+  const [isUpdating, setIsUpdating] = React.useState(false)
   const [styleProfile, setStyleProfile] = React.useState<StyleProfile | null>(
-    // Only show style profile for "prepared" or "completed" visits
-    initialVisit?.status === "prepared" || initialVisit?.status === "completed"
-      ? mockStyleProfile
-      : null
-  )
-  const [stagedImages, setStagedImages] = React.useState<StagedImage[]>(
-    // Only show staged images for "prepared" or "completed" visits
-    initialVisit?.status === "prepared" || initialVisit?.status === "completed"
-      ? mockStagedImages
-      : []
+    null
   )
 
+  // Set style profile for prepared/completed visits (mock for now)
+  React.useEffect(() => {
+    if (visitData?.visit?.status === "prepared" || visitData?.visit?.status === "completed") {
+      setStyleProfile(mockStyleProfile)
+    } else {
+      setStyleProfile(null)
+    }
+  }, [visitData?.visit?.status])
+
+  // Loading state
+  if (visitData === undefined) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16">
+        <div className="text-sm text-muted-foreground">Loading visit details...</div>
+      </div>
+    )
+  }
+
   // Handle visit not found
-  if (!visit) {
+  if (visitData === null) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
         <h1 className="text-lg font-semibold mb-2">Visit not found</h1>
@@ -192,44 +174,83 @@ export default function VisitDetailPage({
     )
   }
 
-  const handleEditSubmit = (data: VisitFormData) => {
-    setVisit((prev) => (prev ? { ...prev, ...data } : null))
-    setEditSheetOpen(false)
+  // Transform data
+  const visit: Visit = {
+    id: visitData.visit._id,
+    startAt: new Date(visitData.visit.startAt),
+    prospectName: visitData.visit.prospectName,
+    phoneNumber: visitData.visit.phoneNumber,
+    status: visitData.visit.status,
   }
 
-  const handleCancel = () => {
-    setVisit((prev) => (prev ? { ...prev, status: "cancelled" } : null))
-    setCancelDialogOpen(false)
+  const property = {
+    id: visitData.property._id,
+    address: visitData.property.address,
+  }
+
+  // Generate prospect link
+  const prospectLink = `estager.com/${visitData.visit.prospectLinkId}`
+
+  // Map generated images to StagedImage format
+  const stagedImages: StagedImage[] = visitData.generatedImages.map((img) => ({
+    id: img._id,
+    originalImageId: img.originalImageId ?? img._id, // Use actual reference, fallback to self for legacy data
+    imageUrl: img.imageUrl,
+    roomType: mapRoomType(img.roomType),
+    status: "ready" as const,
+    createdAt: img._creationTime
+      ? new Date(img._creationTime)
+      : new Date(visitData.visit.createdAt),
+  }))
+
+  const handleEditSubmit = async (data: VisitFormData) => {
+    setIsUpdating(true)
+    try {
+      await updateVisitMutation({
+        visitId: resolvedParams.visitId as Id<"visits">,
+        prospectName: data.prospectName,
+        phoneNumber: data.phoneNumber,
+        startAt: data.startAt.getTime(), // Convert Date to Unix timestamp
+      })
+      setEditSheetOpen(false)
+    } catch (error) {
+      console.error("Failed to update visit:", error)
+      throw error // Re-throw to prevent sheet from closing
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleCancel = async () => {
+    setIsCancelling(true)
+    try {
+      await cancelVisitMutation({ visitId: resolvedParams.visitId as Id<"visits"> })
+      setCancelDialogOpen(false)
+    } catch (error) {
+      console.error("Failed to cancel visit:", error)
+      const message =
+        error instanceof Error ? error.message : "An unexpected error occurred"
+      toast.error("Failed to cancel visit", {
+        description: message,
+      })
+    } finally {
+      setIsCancelling(false)
+    }
   }
 
   const handleDeleteStagedImage = (id: string) => {
-    setStagedImages((prev) => prev.filter((img) => img.id !== id))
+    // TODO: Implement delete mutation
+    console.log("Delete staged image:", id)
   }
 
   const handleRegenerateStagedImage = (id: string) => {
-    setStagedImages((prev) =>
-      prev.map((img) =>
-        img.id === id ? { ...img, status: "generating" as const } : img
-      )
-    )
-    // Simulate regeneration
-    setTimeout(() => {
-      setStagedImages((prev) =>
-        prev.map((img) =>
-          img.id === id ? { ...img, status: "ready" as const } : img
-        )
-      )
-    }, 2000)
+    // TODO: Implement regenerate mutation
+    console.log("Regenerate staged image:", id)
   }
 
   const handleGenerateAllImages = () => {
-    // Simulate generating images
-    setStagedImages(
-      mockStagedImages.map((img) => ({ ...img, status: "generating" as const }))
-    )
-    setTimeout(() => {
-      setStagedImages(mockStagedImages)
-    }, 2000)
+    // TODO: Implement generate all mutation
+    console.log("Generate all images")
   }
 
   const handleUpdateStylePreferences = (preferences: StylePreference[]) => {
@@ -279,7 +300,7 @@ export default function VisitDetailPage({
             </div>
             <p className="text-sm text-muted-foreground flex items-center gap-1.5">
               <MapPin className="size-3.5" />
-              {mockProperty.address}
+              {property.address}
             </p>
           </div>
 
@@ -334,7 +355,7 @@ export default function VisitDetailPage({
               <p className="text-xs text-muted-foreground">Phone number</p>
               <p className="text-sm font-medium flex items-center gap-2">
                 <Phone className="size-3.5 text-muted-foreground" />
-                {formatPhoneNumber(visit.countryCode, visit.phoneNumber)}
+                {visit.phoneNumber}
               </p>
             </div>
             <div className="space-y-1">
@@ -415,6 +436,7 @@ export default function VisitDetailPage({
         mode="edit"
         initialData={visit}
         onSubmit={handleEditSubmit}
+        isSubmitting={isUpdating}
       />
 
       {/* Cancel Confirmation Dialog */}
@@ -428,12 +450,16 @@ export default function VisitDetailPage({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Keep visit</AlertDialogCancel>
+            <AlertDialogCancel disabled={isCancelling}>Keep visit</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleCancel}
+              onClick={async (event) => {
+                event.preventDefault()
+                await handleCancel()
+              }}
+              disabled={isCancelling}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Cancel visit
+              {isCancelling ? "Cancelling..." : "Cancel visit"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

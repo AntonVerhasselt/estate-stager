@@ -1,0 +1,3 @@
+reviews:
+  auto_title_instructions: "Generate a concise, descriptive PR title under 50 characters that summarizes the main purpose of these changes"
+  auto_title_placeholder: "@coderabbitai generate title"

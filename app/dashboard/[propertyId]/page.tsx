@@ -713,6 +713,7 @@ export default function PropertyDetailPage({
   const setStatusToSoldMutation = useMutation(api.properties.update.setStatusToSold)
   const generateUploadUrl = useMutation(api.images.create.generateUploadUrl)
   const addImagesToProperty = useMutation(api.images.create.addImagesToProperty)
+  const createVisitMutation = useMutation(api.visits.create.createVisit)
 
   // State for UI
   const [planVisitOpen, setPlanVisitOpen] = React.useState(false)
@@ -727,6 +728,9 @@ export default function PropertyDetailPage({
 
   // State for mark as sold
   const [isSoldLoading, setIsSoldLoading] = React.useState(false)
+
+  // State for visit creation
+  const [isCreatingVisit, setIsCreatingVisit] = React.useState(false)
 
   // Handle loading and error states
   if (propertyData === undefined) {
@@ -760,19 +764,13 @@ export default function PropertyDetailPage({
     createdAt: new Date(img._creationTime),
   }))
 
-  // Transform visits - parse phone number to extract country code
+  // Transform visits
   const visits: Visit[] = propertyData.visits.map((v) => {
-    // Extract country code from phone number (e.g., "+32471234567" -> "+32" and "471234567")
-    const phoneMatch = v.phoneNumber.match(/^(\+\d{1,3})(.+)$/)
-    const countryCode = phoneMatch ? phoneMatch[1] : "+32"
-    const phoneNumber = phoneMatch ? phoneMatch[2] : v.phoneNumber
-
     return {
       id: v._id,
       startAt: new Date(v.startAt),
       prospectName: v.prospectName,
-      phoneNumber,
-      countryCode,
+      phoneNumber: v.phoneNumber,
       status: v.status,
     }
   })
@@ -794,9 +792,22 @@ export default function PropertyDetailPage({
     router.push(`/dashboard/${resolvedParams.propertyId}/${id}`)
   }
 
-  const handleAddVisit = (visitData: VisitFormData) => {
-    // TODO: Implement visit creation mutation
-    console.log("Added new visit:", visitData)
+  const handleAddVisit = async (visitData: VisitFormData) => {
+    setIsCreatingVisit(true)
+    try {
+      await createVisitMutation({
+        propertyId,
+        prospectName: visitData.prospectName,
+        phoneNumber: visitData.phoneNumber,
+        startAt: visitData.startAt.getTime(),
+      })
+      toast.success("Visit scheduled successfully")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to create visit"
+      toast.error(message)
+    } finally {
+      setIsCreatingVisit(false)
+    }
   }
 
   const handleDeletePicture = async (imageId: Id<"images">) => {
@@ -936,6 +947,7 @@ export default function PropertyDetailPage({
         onOpenChange={setPlanVisitOpen}
         mode="create"
         onSubmit={handleAddVisit}
+        isSubmitting={isCreatingVisit}
       />
 
       <AddImagesSheet

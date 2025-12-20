@@ -39,8 +39,9 @@ export default defineSchema({
 
   images: defineTable({
     propertyId: v.id("properties"),
-    // Convex storage ID for the uploaded image
     storageId: v.id("_storage"),
+    visitId: v.optional(v.id("visits")),
+    originalImageId: v.optional(v.id("images")),
     roomType: v.union(
       v.literal("living-room"),
       v.literal("kitchen"),
@@ -52,7 +53,9 @@ export default defineSchema({
       v.literal("other")
     ),
   }).index("by_propertyId", ["propertyId"])
-    .index("by_storageId", ["storageId"]),
+    .index("by_storageId", ["storageId"])
+    .index("by_originalImageId", ["originalImageId"])
+    .index("by_visitId", ["visitId"]),
   
   visits: defineTable({
     propertyId: v.id("properties"),

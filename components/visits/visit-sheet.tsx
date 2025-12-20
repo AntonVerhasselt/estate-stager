@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { CalendarPlus, Phone, Save } from "lucide-react"
+import { CalendarPlus, Phone, Save, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,13 +16,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 // ============================================================================
 // TYPES
@@ -32,8 +26,7 @@ export type Visit = {
   id: string
   startAt: Date
   prospectName: string
-  phoneNumber: string
-  countryCode: string
+  phoneNumber: string // Full phone number including country code
   status: VisitStatus
 }
 
@@ -44,20 +37,9 @@ type VisitSheetProps = {
   onOpenChange: (open: boolean) => void
   mode: "create" | "edit"
   initialData?: Partial<Visit>
-  onSubmit: (data: VisitFormData) => void
+  onSubmit: (data: VisitFormData) => void | Promise<void>
+  isSubmitting?: boolean
 }
-
-// ============================================================================
-// CONSTANTS
-// ============================================================================
-const COUNTRY_CODES = [
-  { code: "+32", country: "Belgium", flag: "🇧🇪" },
-  { code: "+31", country: "Netherlands", flag: "🇳🇱" },
-  { code: "+33", country: "France", flag: "🇫🇷" },
-  { code: "+49", country: "Germany", flag: "🇩🇪" },
-  { code: "+44", country: "UK", flag: "🇬🇧" },
-  { code: "+1", country: "US", flag: "🇺🇸" },
-]
 
 // ============================================================================
 // HELPERS
@@ -101,10 +83,10 @@ export function VisitSheet({
   mode,
   initialData,
   onSubmit,
+  isSubmitting = false,
 }: VisitSheetProps) {
   const isMobile = useMediaQuery("(max-width: 639px)")
   const [prospectName, setProspectName] = React.useState("")
-  const [countryCode, setCountryCode] = React.useState("+32")
   const [phoneNumber, setPhoneNumber] = React.useState("")
   const [dateTime, setDateTime] = React.useState("")
 
@@ -112,7 +94,6 @@ export function VisitSheet({
   React.useEffect(() => {
     if (open && initialData) {
       setProspectName(initialData.prospectName || "")
-      setCountryCode(initialData.countryCode || "+32")
       setPhoneNumber(initialData.phoneNumber || "")
       if (initialData.startAt) {
         setDateTime(formatDateTimeForInput(initialData.startAt))
@@ -122,23 +103,30 @@ export function VisitSheet({
 
   const resetForm = () => {
     setProspectName("")
-    setCountryCode("+32")
     setPhoneNumber("")
     setDateTime("")
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!prospectName || !phoneNumber || !dateTime) return
 
-    onSubmit({
-      prospectName,
-      phoneNumber,
-      countryCode,
-      startAt: new Date(dateTime),
-    })
-    resetForm()
-    onOpenChange(false)
+    try {
+      await onSubmit({
+        prospectName,
+        phoneNumber,
+        startAt: new Date(dateTime),
+      })
+      resetForm()
+      onOpenChange(false)
+    } catch (error) {
+      // Show user-facing error feedback and keep the sheet open
+      const message =
+        error instanceof Error ? error.message : "An unexpected error occurred"
+      toast.error(mode === "edit" ? "Failed to update visit" : "Failed to schedule visit", {
+        description: message,
+      })
+    }
   }
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -167,7 +155,7 @@ export function VisitSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
+        <form id="visit-form" onSubmit={handleSubmit} className="flex flex-col gap-4 p-4">
           <div className="space-y-2">
             <Label htmlFor="prospectName">Prospect name</Label>
             <Input
@@ -181,34 +169,17 @@ export function VisitSheet({
 
           <div className="space-y-2">
             <Label htmlFor="phone">Phone number</Label>
-            <div className="flex gap-2">
-              <Select value={countryCode} onValueChange={setCountryCode}>
-                <SelectTrigger className="w-[100px] shrink-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {COUNTRY_CODES.map((country) => (
-                    <SelectItem key={country.code} value={country.code}>
-                      <span className="flex items-center gap-1.5">
-                        <span>{country.flag}</span>
-                        <span>{country.code}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="relative flex-1">
-                <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="Phone number"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="pl-8"
-                  required
-                />
-              </div>
+            <div className="relative">
+              <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="+32 471 23 45 67"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="pl-8"
+                required
+              />
             </div>
           </div>
 
@@ -233,11 +204,17 @@ export function VisitSheet({
             </Button>
           </SheetClose>
           <Button
-            onClick={handleSubmit}
-            disabled={!isValid}
+            type="submit"
+            form="visit-form"
+            disabled={!isValid || isSubmitting}
             className="w-full sm:w-auto"
           >
-            {isEditMode ? (
+            {isSubmitting ? (
+              <>
+                <Loader2 className="animate-spin" data-icon="inline-start" />
+                {isEditMode ? "Saving..." : "Scheduling..."}
+              </>
+            ) : isEditMode ? (
               <>
                 <Save data-icon="inline-start" />
                 Save changes
