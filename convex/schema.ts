@@ -31,7 +31,7 @@ export default defineSchema({
     organizationId: v.id("organizations"),
     userId: v.id("users"), // Created by / assigned to
     sourceUrl: v.optional(v.string()),
-    images: v.array(v.id("images")),
+    images: v.optional(v.array(v.id("images"))),
   })
     .index("by_organizationId", ["organizationId"])
     .index("by_userId", ["userId"])

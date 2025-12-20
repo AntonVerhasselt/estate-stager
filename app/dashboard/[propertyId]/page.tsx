@@ -4,6 +4,10 @@ import * as React from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useQuery, useMutation } from "convex/react"
+import { api } from "@/convex/_generated/api"
+import type { Id } from "@/convex/_generated/dataModel"
+import { toast } from "sonner"
 import {
   ArrowLeft,
   CalendarPlus,
@@ -30,6 +34,7 @@ import {
   Trees,
   DoorOpen,
   Monitor,
+  Loader2,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -81,12 +86,6 @@ import {
 import { type RoomType as ImageGalleryRoomType } from "@/components/add-property/image-gallery"
 
 // ============================================================================
-// MOCK DATA TOGGLES - Set to true to test empty states
-// ============================================================================
-const MOCK_EMPTY_VISITS = false
-const MOCK_EMPTY_PICTURES = false
-
-// ============================================================================
 // TYPES
 // ============================================================================
 type PropertyStatus = "available" | "sold"
@@ -109,7 +108,7 @@ type Property = {
 }
 
 type Picture = {
-  id: string
+  id: Id<"images">
   imageUrl: string
   roomType: RoomType
   createdAt: Date
@@ -119,137 +118,6 @@ type Picture = {
 // CONSTANTS
 // ============================================================================
 const ITEMS_PER_PAGE_OPTIONS = [5, 10, 20]
-
-// ============================================================================
-// INITIAL MOCK DATA
-// ============================================================================
-const initialMockProperty: Property = {
-  id: "1",
-  address: "123 Oak Street, Brooklyn, NY 11201",
-  status: "available",
-}
-
-const initialMockVisits: Visit[] = MOCK_EMPTY_VISITS
-  ? []
-  : [
-      {
-        id: "v1",
-        startAt: new Date("2025-12-16T10:00:00"),
-        prospectName: "Sarah Johnson",
-        phoneNumber: "471234567",
-        countryCode: "+32",
-        status: "prepared",
-      },
-      {
-        id: "v2",
-        startAt: new Date("2025-12-14T14:30:00"),
-        prospectName: "Michael Chen",
-        phoneNumber: "612345678",
-        countryCode: "+31",
-        status: "completed",
-      },
-      {
-        id: "v3",
-        startAt: new Date("2025-12-12T11:00:00"),
-        prospectName: "Emily Davis",
-        phoneNumber: "678901234",
-        countryCode: "+33",
-        status: "cancelled",
-      },
-      {
-        id: "v4",
-        startAt: new Date("2025-12-18T16:00:00"),
-        prospectName: "Amanda Brown",
-        phoneNumber: "491234567",
-        countryCode: "+32",
-        status: "planned",
-      },
-      {
-        id: "v5",
-        startAt: new Date("2025-12-20T09:00:00"),
-        prospectName: "Robert Taylor",
-        phoneNumber: "478901234",
-        countryCode: "+32",
-        status: "planned",
-      },
-      {
-        id: "v6",
-        startAt: new Date("2025-12-10T15:00:00"),
-        prospectName: "Jennifer Martinez",
-        phoneNumber: "623456789",
-        countryCode: "+31",
-        status: "completed",
-      },
-      {
-        id: "v7",
-        startAt: new Date("2025-12-22T11:30:00"),
-        prospectName: "David Anderson",
-        phoneNumber: "156789012",
-        countryCode: "+49",
-        status: "prepared",
-      },
-    ]
-
-const initialMockPictures: Picture[] = MOCK_EMPTY_PICTURES
-  ? []
-  : [
-      {
-        id: "p1",
-        imageUrl:
-          "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&auto=format&fit=crop",
-        roomType: "living-room",
-        createdAt: new Date("2025-12-01"),
-      },
-      {
-        id: "p2",
-        imageUrl:
-          "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&auto=format&fit=crop",
-        roomType: "kitchen",
-        createdAt: new Date("2025-12-01"),
-      },
-      {
-        id: "p3",
-        imageUrl:
-          "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=800&auto=format&fit=crop",
-        roomType: "bedroom",
-        createdAt: new Date("2025-12-02"),
-      },
-      {
-        id: "p4",
-        imageUrl:
-          "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&auto=format&fit=crop",
-        roomType: "bathroom",
-        createdAt: new Date("2025-12-02"),
-      },
-      {
-        id: "p5",
-        imageUrl:
-          "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop",
-        roomType: "living-room",
-        createdAt: new Date("2025-12-03"),
-      },
-      {
-        id: "p6",
-        imageUrl:
-          "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&auto=format&fit=crop",
-        roomType: "kitchen",
-        createdAt: new Date("2025-12-03"),
-      },
-      {
-        id: "p7",
-        imageUrl:
-          "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop",
-        roomType: "bedroom",
-        createdAt: new Date("2025-12-04"),
-      },
-      {
-        id: "p8",
-        imageUrl:
-          "https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?w=800&auto=format&fit=crop",
-        roomType: "other",
-        createdAt: new Date("2025-12-04"),
-      },
-    ]
 
 // ============================================================================
 // HELPERS
@@ -300,10 +168,6 @@ function getRoomTypeIcon(roomType: RoomType) {
   return icons[roomType]
 }
 
-function generateId(): string {
-  return `v${Date.now()}`
-}
-
 function fileToDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -321,10 +185,12 @@ function TitleRow({
   property,
   onMarkAsSold,
   onPlanVisit,
+  isSoldLoading,
 }: {
   property: Property
   onMarkAsSold: () => void
   onPlanVisit: () => void
+  isSoldLoading: boolean
 }) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -362,9 +228,16 @@ function TitleRow({
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={onMarkAsSold}>
-                  Mark as sold
+                <AlertDialogCancel disabled={isSoldLoading}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onMarkAsSold} disabled={isSoldLoading}>
+                  {isSoldLoading ? (
+                    <>
+                      <Loader2 className="animate-spin" data-icon="inline-start" />
+                      Marking as sold...
+                    </>
+                  ) : (
+                    "Mark as sold"
+                  )}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -662,9 +535,11 @@ function PicturesEmptyState({ onAddImages }: { onAddImages: () => void }) {
 function PictureCard({
   picture,
   onDelete,
+  isDeleting,
 }: {
   picture: Picture
-  onDelete: (id: string) => void
+  onDelete: (id: Id<"images">) => void
+  isDeleting: boolean
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = React.useState(false)
 
@@ -704,13 +579,18 @@ function PictureCard({
                     variant="ghost"
                     size="icon"
                     className="text-muted-foreground hover:text-foreground"
+                    disabled={isDeleting}
                     onClick={(e) => {
                       e.stopPropagation()
                       e.preventDefault()
                       setShowDeleteConfirm(true)
                     }}
                   >
-                    <Trash2 />
+                    {isDeleting ? (
+                      <Loader2 className="animate-spin" />
+                    ) : (
+                      <Trash2 />
+                    )}
                   </Button>
                 </div>
               </CardContent>
@@ -767,10 +647,12 @@ function PicturesSection({
   pictures,
   onDeletePicture,
   onAddImages,
+  isDeletingId,
 }: {
   pictures: Picture[]
-  onDeletePicture: (id: string) => void
+  onDeletePicture: (id: Id<"images">) => void
   onAddImages: () => void
+  isDeletingId: Id<"images"> | null
 }) {
   return (
     <Card>
@@ -801,6 +683,7 @@ function PicturesSection({
                 key={picture.id}
                 picture={picture}
                 onDelete={onDeletePicture}
+                isDeleting={isDeletingId === picture.id}
               />
             ))}
           </div>
@@ -823,20 +706,88 @@ export default function PropertyDetailPage({
   const router = useRouter()
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
-  // State for all data
-  const [visits, setVisits] = React.useState<Visit[]>(initialMockVisits)
-  const [pictures, setPictures] = React.useState<Picture[]>(initialMockPictures)
+  // Fetch property data from Convex
+  const propertyId = resolvedParams.propertyId as Id<"properties">
+  const propertyData = useQuery(api.properties.get.getPropertyById, { propertyId })
+  const deleteImageMutation = useMutation(api.images.delete.deleteImage)
+  const setStatusToSoldMutation = useMutation(api.properties.update.setStatusToSold)
+  const generateUploadUrl = useMutation(api.images.create.generateUploadUrl)
+  const addImagesToProperty = useMutation(api.images.create.addImagesToProperty)
+
+  // State for UI
   const [planVisitOpen, setPlanVisitOpen] = React.useState(false)
 
   // State for add images flow
   const [addImagesOpen, setAddImagesOpen] = React.useState(false)
   const [pendingImages, setPendingImages] = React.useState<PendingImage[]>([])
+  const [isUploading, setIsUploading] = React.useState(false)
 
-  // In a real app, we'd fetch data based on params.propertyId
-  console.log("Property ID:", resolvedParams.propertyId)
+  // State for delete image flow
+  const [isDeletingId, setIsDeletingId] = React.useState<Id<"images"> | null>(null)
 
-  const handleMarkAsSold = () => {
-    console.log("Mark as sold confirmed for property:", initialMockProperty.id)
+  // State for mark as sold
+  const [isSoldLoading, setIsSoldLoading] = React.useState(false)
+
+  // Handle loading and error states
+  if (propertyData === undefined) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    )
+  }
+
+  if (propertyData === null) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-muted-foreground">Property not found</div>
+      </div>
+    )
+  }
+
+  // Transform property data
+  const property: Property = {
+    id: propertyData._id,
+    address: propertyData.address,
+    status: propertyData.status,
+  }
+
+  // Transform images to pictures
+  const pictures: Picture[] = propertyData.images.map((img) => ({
+    id: img._id,
+    imageUrl: img.imageUrl ?? "",
+    roomType: img.roomType,
+    createdAt: new Date(img._creationTime),
+  }))
+
+  // Transform visits - parse phone number to extract country code
+  const visits: Visit[] = propertyData.visits.map((v) => {
+    // Extract country code from phone number (e.g., "+32471234567" -> "+32" and "471234567")
+    const phoneMatch = v.phoneNumber.match(/^(\+\d{1,3})(.+)$/)
+    const countryCode = phoneMatch ? phoneMatch[1] : "+32"
+    const phoneNumber = phoneMatch ? phoneMatch[2] : v.phoneNumber
+
+    return {
+      id: v._id,
+      startAt: new Date(v.startAt),
+      prospectName: v.prospectName,
+      phoneNumber,
+      countryCode,
+      status: v.status,
+    }
+  })
+
+  const handleMarkAsSold = async () => {
+    setIsSoldLoading(true)
+    try {
+      await setStatusToSoldMutation({ propertyId })
+      toast.success("Property marked as sold")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to mark property as sold"
+      toast.error(message)
+    } finally {
+      setIsSoldLoading(false)
+    }
   }
 
   const handleOpenVisit = (id: string) => {
@@ -844,18 +795,21 @@ export default function PropertyDetailPage({
   }
 
   const handleAddVisit = (visitData: VisitFormData) => {
-    const newVisit: Visit = {
-      ...visitData,
-      id: generateId(),
-      status: "planned",
-    }
-    setVisits((prev) => [...prev, newVisit])
-    console.log("Added new visit:", newVisit)
+    // TODO: Implement visit creation mutation
+    console.log("Added new visit:", visitData)
   }
 
-  const handleDeletePicture = (id: string) => {
-    setPictures((prev) => prev.filter((p) => p.id !== id))
-    console.log("Deleted picture:", id)
+  const handleDeletePicture = async (imageId: Id<"images">) => {
+    setIsDeletingId(imageId)
+    try {
+      await deleteImageMutation({ imageId })
+      toast.success("Image deleted successfully")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to delete image"
+      toast.error(message)
+    } finally {
+      setIsDeletingId(null)
+    }
   }
 
   const handleAddImages = () => {
@@ -881,23 +835,53 @@ export default function PropertyDetailPage({
   }
 
   const handleAddImagesSubmit = async (images: PendingImage[]) => {
-    // Convert blob URLs to data URLs so they persist after blob URLs are revoked
-    const newPictures: Picture[] = await Promise.all(
-      images.map(async (img) => {
-        // Read the file as a data URL instead of using the blob URL
-        const dataUrl = await fileToDataUrl(img.file)
-        return {
-          id: img.id,
-          imageUrl: dataUrl,
-          roomType: img.roomType as RoomType,
-          createdAt: new Date(),
-        }
-      })
-    )
+    setIsUploading(true)
+    try {
+      // Upload each image to Convex storage
+      const uploadedImages = await Promise.all(
+        images.map(async (img) => {
+          // Get upload URL
+          const uploadUrl = await generateUploadUrl()
+          
+          // Upload the file
+          const response = await fetch(uploadUrl, {
+            method: "POST",
+            headers: { "Content-Type": img.file.type },
+            body: img.file,
+          })
+          
+          if (!response.ok) {
+            throw new Error(`Failed to upload image: ${response.statusText}`)
+          }
+          
+          const { storageId } = await response.json()
+          
+          return {
+            storageId,
+            roomType: img.roomType as ImageGalleryRoomType,
+          }
+        })
+      )
 
-    setPictures((prev) => [...prev, ...newPictures])
-    setPendingImages([])
-    console.log("Added images:", newPictures)
+      // Create records and update property
+      await addImagesToProperty({
+        propertyId,
+        images: uploadedImages,
+      })
+
+      // Clean up blob URLs after successful upload
+      images.forEach((img) => URL.revokeObjectURL(img.src))
+      setPendingImages([])
+      toast.success("Images uploaded successfully")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error"
+      toast.error(`Failed to upload images: ${message}`)
+      // Clean up blob URLs on error
+      images.forEach((img) => URL.revokeObjectURL(img.src))
+      setPendingImages([])
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   const handleAddImagesOpenChange = (open: boolean) => {
@@ -933,15 +917,17 @@ export default function PropertyDetailPage({
         </div>
 
         <TitleRow
-          property={initialMockProperty}
+          property={property}
           onMarkAsSold={handleMarkAsSold}
           onPlanVisit={() => setPlanVisitOpen(true)}
+          isSoldLoading={isSoldLoading}
         />
         <VisitsSection visits={visits} onOpenVisit={handleOpenVisit} />
         <PicturesSection
           pictures={pictures}
           onDeletePicture={handleDeletePicture}
           onAddImages={handleAddImages}
+          isDeletingId={isDeletingId}
         />
       </div>
 
