@@ -45,7 +45,7 @@ export type RoomType = "living" | "kitchen" | "bedroom" | "bathroom" | "other"
 
 export type StagedImage = {
   id: string
-  originalPictureId: string
+  originalImageId: string
   imageUrl: string
   roomType: RoomType
   status: "generating" | "ready" | "failed"
@@ -348,7 +348,7 @@ export function StagedImageGallery({
 export const mockStagedImages: StagedImage[] = [
   {
     id: "si1",
-    originalPictureId: "p1",
+    originalImageId: "p1",
     imageUrl:
       "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&auto=format&fit=crop",
     roomType: "living",
@@ -357,7 +357,7 @@ export const mockStagedImages: StagedImage[] = [
   },
   {
     id: "si2",
-    originalPictureId: "p2",
+    originalImageId: "p2",
     imageUrl:
       "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&auto=format&fit=crop",
     roomType: "kitchen",
@@ -366,7 +366,7 @@ export const mockStagedImages: StagedImage[] = [
   },
   {
     id: "si3",
-    originalPictureId: "p3",
+    originalImageId: "p3",
     imageUrl:
       "https://images.unsplash.com/photo-1617325247661-675ab4b64ae2?w=800&auto=format&fit=crop",
     roomType: "bedroom",
@@ -375,7 +375,7 @@ export const mockStagedImages: StagedImage[] = [
   },
   {
     id: "si4",
-    originalPictureId: "p4",
+    originalImageId: "p4",
     imageUrl:
       "https://images.unsplash.com/photo-1552321554-5fefe8c9ef14?w=800&auto=format&fit=crop",
     roomType: "bathroom",
@@ -384,7 +384,7 @@ export const mockStagedImages: StagedImage[] = [
   },
   {
     id: "si5",
-    originalPictureId: "p5",
+    originalImageId: "p5",
     imageUrl:
       "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&auto=format&fit=crop",
     roomType: "living",
@@ -393,7 +393,7 @@ export const mockStagedImages: StagedImage[] = [
   },
   {
     id: "si6",
-    originalPictureId: "p6",
+    originalImageId: "p6",
     imageUrl:
       "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800&auto=format&fit=crop",
     roomType: "other",

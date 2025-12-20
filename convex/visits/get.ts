@@ -42,6 +42,7 @@ export const getVisitById = query({
           _creationTime: image._creationTime,
           roomType: image.roomType,
           imageUrl: url,
+          originalImageId: image.originalImageId ?? null,
         };
       })
     ).then((imgs) => imgs.filter((img): img is NonNullable<typeof img> => img !== null));

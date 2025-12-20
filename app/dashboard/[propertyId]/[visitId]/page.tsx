@@ -194,7 +194,7 @@ export default function VisitDetailPage({
   // Map generated images to StagedImage format
   const stagedImages: StagedImage[] = visitData.generatedImages.map((img) => ({
     id: img._id,
-    originalPictureId: img._id, // Using image ID as placeholder
+    originalImageId: img.originalImageId ?? img._id, // Use actual reference, fallback to self for legacy data
     imageUrl: img.imageUrl,
     roomType: mapRoomType(img.roomType),
     status: "ready" as const,
