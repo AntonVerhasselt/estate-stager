@@ -39,6 +39,7 @@ export const getVisitById = query({
         if (!url) return null;
         return {
           _id: image._id,
+          _creationTime: image._creationTime,
           roomType: image.roomType,
           imageUrl: url,
         };

@@ -197,7 +197,9 @@ export default function VisitDetailPage({
     imageUrl: img.imageUrl,
     roomType: mapRoomType(img.roomType),
     status: "ready" as const,
-    createdAt: new Date(visitData.visit.createdAt),
+    createdAt: img._creationTime
+      ? new Date(img._creationTime)
+      : new Date(visitData.visit.createdAt),
   }))
 
   const handleEditSubmit = async (data: VisitFormData) => {
