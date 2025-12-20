@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { CalendarPlus, Phone, Save, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -131,8 +132,12 @@ export function VisitSheet({
       resetForm()
       onOpenChange(false)
     } catch (error) {
-      // Error handling is done in the parent component
-      // Just prevent the form from closing on error
+      // Show user-facing error feedback and keep the sheet open
+      const message =
+        error instanceof Error ? error.message : "An unexpected error occurred"
+      toast.error(mode === "edit" ? "Failed to update visit" : "Failed to schedule visit", {
+        description: message,
+      })
     }
   }
 
