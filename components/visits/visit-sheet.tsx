@@ -15,13 +15,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 
 // ============================================================================
 // TYPES
@@ -32,8 +25,7 @@ export type Visit = {
   id: string
   startAt: Date
   prospectName: string
-  phoneNumber: string
-  countryCode: string
+  phoneNumber: string // Full phone number including country code
   status: VisitStatus
 }
 
@@ -106,7 +98,6 @@ export function VisitSheet({
 }: VisitSheetProps) {
   const isMobile = useMediaQuery("(max-width: 639px)")
   const [prospectName, setProspectName] = React.useState("")
-  const [countryCode, setCountryCode] = React.useState("+32")
   const [phoneNumber, setPhoneNumber] = React.useState("")
   const [dateTime, setDateTime] = React.useState("")
 
@@ -114,7 +105,6 @@ export function VisitSheet({
   React.useEffect(() => {
     if (open && initialData) {
       setProspectName(initialData.prospectName || "")
-      setCountryCode(initialData.countryCode || "+32")
       setPhoneNumber(initialData.phoneNumber || "")
       if (initialData.startAt) {
         setDateTime(formatDateTimeForInput(initialData.startAt))
@@ -124,7 +114,6 @@ export function VisitSheet({
 
   const resetForm = () => {
     setProspectName("")
-    setCountryCode("+32")
     setPhoneNumber("")
     setDateTime("")
   }
@@ -137,7 +126,6 @@ export function VisitSheet({
       await onSubmit({
         prospectName,
         phoneNumber,
-        countryCode,
         startAt: new Date(dateTime),
       })
       resetForm()
@@ -188,34 +176,17 @@ export function VisitSheet({
 
           <div className="space-y-2">
             <Label htmlFor="phone">Phone number</Label>
-            <div className="flex gap-2">
-              <Select value={countryCode} onValueChange={setCountryCode}>
-                <SelectTrigger className="w-[100px] shrink-0">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {COUNTRY_CODES.map((country) => (
-                    <SelectItem key={country.code} value={country.code}>
-                      <span className="flex items-center gap-1.5">
-                        <span>{country.flag}</span>
-                        <span>{country.code}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="relative flex-1">
-                <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="Phone number"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="pl-8"
-                  required
-                />
-              </div>
+            <div className="relative">
+              <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="+32 471 23 45 67"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="pl-8"
+                required
+              />
             </div>
           </div>
 

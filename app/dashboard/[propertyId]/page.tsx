@@ -764,19 +764,13 @@ export default function PropertyDetailPage({
     createdAt: new Date(img._creationTime),
   }))
 
-  // Transform visits - parse phone number to extract country code
+  // Transform visits
   const visits: Visit[] = propertyData.visits.map((v) => {
-    // Extract country code from phone number (e.g., "+32471234567" -> "+32" and "471234567")
-    const phoneMatch = v.phoneNumber.match(/^(\+\d{1,3})(.+)$/)
-    const countryCode = phoneMatch ? phoneMatch[1] : "+32"
-    const phoneNumber = phoneMatch ? phoneMatch[2] : v.phoneNumber
-
     return {
       id: v._id,
       startAt: new Date(v.startAt),
       prospectName: v.prospectName,
-      phoneNumber,
-      countryCode,
+      phoneNumber: v.phoneNumber,
       status: v.status,
     }
   })
@@ -801,11 +795,10 @@ export default function PropertyDetailPage({
   const handleAddVisit = async (visitData: VisitFormData) => {
     setIsCreatingVisit(true)
     try {
-      const fullPhoneNumber = visitData.countryCode + visitData.phoneNumber
       await createVisitMutation({
         propertyId,
         prospectName: visitData.prospectName,
-        phoneNumber: fullPhoneNumber,
+        phoneNumber: visitData.phoneNumber,
         startAt: visitData.startAt.getTime(),
       })
       toast.success("Visit scheduled successfully")
