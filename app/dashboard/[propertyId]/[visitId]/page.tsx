@@ -436,6 +436,7 @@ export default function VisitDetailPage({
         mode="edit"
         initialData={visit}
         onSubmit={handleEditSubmit}
+        isSubmitting={isUpdating}
       />
 
       {/* Cancel Confirmation Dialog */}
