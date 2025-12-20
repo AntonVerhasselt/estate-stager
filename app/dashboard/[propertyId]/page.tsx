@@ -713,6 +713,7 @@ export default function PropertyDetailPage({
   const setStatusToSoldMutation = useMutation(api.properties.update.setStatusToSold)
   const generateUploadUrl = useMutation(api.images.create.generateUploadUrl)
   const addImagesToProperty = useMutation(api.images.create.addImagesToProperty)
+  const createVisitMutation = useMutation(api.visits.create.createVisit)
 
   // State for UI
   const [planVisitOpen, setPlanVisitOpen] = React.useState(false)
@@ -727,6 +728,9 @@ export default function PropertyDetailPage({
 
   // State for mark as sold
   const [isSoldLoading, setIsSoldLoading] = React.useState(false)
+
+  // State for visit creation
+  const [isCreatingVisit, setIsCreatingVisit] = React.useState(false)
 
   // Handle loading and error states
   if (propertyData === undefined) {
@@ -794,9 +798,23 @@ export default function PropertyDetailPage({
     router.push(`/dashboard/${resolvedParams.propertyId}/${id}`)
   }
 
-  const handleAddVisit = (visitData: VisitFormData) => {
-    // TODO: Implement visit creation mutation
-    console.log("Added new visit:", visitData)
+  const handleAddVisit = async (visitData: VisitFormData) => {
+    setIsCreatingVisit(true)
+    try {
+      const fullPhoneNumber = visitData.countryCode + visitData.phoneNumber
+      await createVisitMutation({
+        propertyId,
+        prospectName: visitData.prospectName,
+        phoneNumber: fullPhoneNumber,
+        startAt: visitData.startAt.getTime(),
+      })
+      toast.success("Visit scheduled successfully")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to create visit"
+      toast.error(message)
+    } finally {
+      setIsCreatingVisit(false)
+    }
   }
 
   const handleDeletePicture = async (imageId: Id<"images">) => {
@@ -936,6 +954,7 @@ export default function PropertyDetailPage({
         onOpenChange={setPlanVisitOpen}
         mode="create"
         onSubmit={handleAddVisit}
+        isSubmitting={isCreatingVisit}
       />
 
       <AddImagesSheet

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { CalendarPlus, Phone, Save } from "lucide-react"
+import { CalendarPlus, Phone, Save, Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -44,7 +44,8 @@ type VisitSheetProps = {
   onOpenChange: (open: boolean) => void
   mode: "create" | "edit"
   initialData?: Partial<Visit>
-  onSubmit: (data: VisitFormData) => void
+  onSubmit: (data: VisitFormData) => void | Promise<void>
+  isSubmitting?: boolean
 }
 
 // ============================================================================
@@ -101,6 +102,7 @@ export function VisitSheet({
   mode,
   initialData,
   onSubmit,
+  isSubmitting = false,
 }: VisitSheetProps) {
   const isMobile = useMediaQuery("(max-width: 639px)")
   const [prospectName, setProspectName] = React.useState("")
@@ -127,18 +129,23 @@ export function VisitSheet({
     setDateTime("")
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!prospectName || !phoneNumber || !dateTime) return
 
-    onSubmit({
-      prospectName,
-      phoneNumber,
-      countryCode,
-      startAt: new Date(dateTime),
-    })
-    resetForm()
-    onOpenChange(false)
+    try {
+      await onSubmit({
+        prospectName,
+        phoneNumber,
+        countryCode,
+        startAt: new Date(dateTime),
+      })
+      resetForm()
+      onOpenChange(false)
+    } catch (error) {
+      // Error handling is done in the parent component
+      // Just prevent the form from closing on error
+    }
   }
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -234,10 +241,15 @@ export function VisitSheet({
           </SheetClose>
           <Button
             onClick={handleSubmit}
-            disabled={!isValid}
+            disabled={!isValid || isSubmitting}
             className="w-full sm:w-auto"
           >
-            {isEditMode ? (
+            {isSubmitting ? (
+              <>
+                <Loader2 className="animate-spin" data-icon="inline-start" />
+                {isEditMode ? "Saving..." : "Scheduling..."}
+              </>
+            ) : isEditMode ? (
               <>
                 <Save data-icon="inline-start" />
                 Save changes
