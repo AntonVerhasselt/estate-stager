@@ -132,8 +132,7 @@ export default defineSchema({
       v.literal("other")
     )),
   }).index("by_unsplashId", ["unsplashId"])
-    .index("by_style", ["style"])
-    .index("by_colorPalette", ["colorPalette"])
-    .index("by_materials", ["materials"])
+    .index("by_unsplashUrl", ["unsplashUrl"])
+    .index("by_confirmed", ["confirmed"])
     .index("by_roomType", ["roomType"]),
 });
