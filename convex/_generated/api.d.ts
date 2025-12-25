@@ -27,6 +27,8 @@ import type * as styleImages_analyze from "../styleImages/analyze.js";
 import type * as styleImages_create from "../styleImages/create.js";
 import type * as styleImages_fetchFromUnsplash from "../styleImages/fetchFromUnsplash.js";
 import type * as styleImages_get from "../styleImages/get.js";
+import type * as styleImages_list from "../styleImages/list.js";
+import type * as styleImages_update from "../styleImages/update.js";
 import type * as users_create from "../users/create.js";
 import type * as users_list from "../users/list.js";
 import type * as users_update from "../users/update.js";
@@ -61,6 +63,8 @@ declare const fullApi: ApiFromModules<{
   "styleImages/create": typeof styleImages_create;
   "styleImages/fetchFromUnsplash": typeof styleImages_fetchFromUnsplash;
   "styleImages/get": typeof styleImages_get;
+  "styleImages/list": typeof styleImages_list;
+  "styleImages/update": typeof styleImages_update;
   "users/create": typeof users_create;
   "users/list": typeof users_list;
   "users/update": typeof users_update;

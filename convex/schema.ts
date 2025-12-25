@@ -131,8 +131,10 @@ export default defineSchema({
       v.literal("desk-area"),
       v.literal("other")
     )),
+    deleted: v.optional(v.boolean()),
   }).index("by_unsplashId", ["unsplashId"])
     .index("by_unsplashUrl", ["unsplashUrl"])
     .index("by_confirmed", ["confirmed"])
-    .index("by_roomType", ["roomType"]),
+    .index("by_roomType", ["roomType"])
+    .index("by_confirmed_deleted", ["confirmed", "deleted"]),
 });
