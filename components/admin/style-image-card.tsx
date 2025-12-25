@@ -26,40 +26,34 @@ type StyleImage = {
   style?: Array<
     | "modern"
     | "traditional"
-    | "minimalist"
-    | "bohemian"
-    | "industrial"
     | "scandinavian"
-    | "other"
+    | "industrial"
+    | "bohemian"
+    | "coastal"
   >;
   colorPalette?: Array<
-    | "warm"
-    | "cool"
-    | "neutral"
-    | "bold"
-    | "soft"
-    | "red"
-    | "green"
-    | "blue"
-    | "yellow"
-    | "purple"
-    | "orange"
-    | "brown"
-    | "gray"
-    | "black"
-    | "white"
+    | "light-and-airy"
+    | "dark-and-moody"
+    | "earth-tones"
+    | "monochrome"
+    | "bold-and-vibrant"
+    | "warm-neutrals"
   >;
-  materials?: Array<
-    | "wood"
-    | "metal"
-    | "glass"
-    | "stone"
-    | "ceramic"
-    | "paper"
-    | "plastic"
-    | "leather"
-    | "fabric"
-    | "other"
+  materialFocus?: Array<
+    | "natural-wood"
+    | "metal-and-glass"
+    | "stone-and-concrete"
+    | "upholstered"
+    | "rattan-and-wicker"
+    | "painted-and-lacquered"
+  >;
+  spatialPhilosophy?: Array<
+    | "open-and-flowing"
+    | "cozy-and-defined"
+    | "minimal-and-uncluttered"
+    | "maximalist-and-collected"
+    | "symmetrical-and-formal"
+    | "functional-and-zoned"
   >;
   roomType?:
     | "living-room"
@@ -75,42 +69,37 @@ type StyleImage = {
 const STYLE_OPTIONS = [
   "modern",
   "traditional",
-  "minimalist",
-  "bohemian",
-  "industrial",
   "scandinavian",
-  "other",
+  "industrial",
+  "bohemian",
+  "coastal",
 ] as const;
 
 const COLOR_PALETTE_OPTIONS = [
-  "warm",
-  "cool",
-  "neutral",
-  "bold",
-  "soft",
-  "red",
-  "green",
-  "blue",
-  "yellow",
-  "purple",
-  "orange",
-  "brown",
-  "gray",
-  "black",
-  "white",
+  "light-and-airy",
+  "dark-and-moody",
+  "earth-tones",
+  "monochrome",
+  "bold-and-vibrant",
+  "warm-neutrals",
 ] as const;
 
-const MATERIALS_OPTIONS = [
-  "wood",
-  "metal",
-  "glass",
-  "stone",
-  "ceramic",
-  "paper",
-  "plastic",
-  "leather",
-  "fabric",
-  "other",
+const MATERIAL_FOCUS_OPTIONS = [
+  "natural-wood",
+  "metal-and-glass",
+  "stone-and-concrete",
+  "upholstered",
+  "rattan-and-wicker",
+  "painted-and-lacquered",
+] as const;
+
+const SPATIAL_PHILOSOPHY_OPTIONS = [
+  "open-and-flowing",
+  "cozy-and-defined",
+  "minimal-and-uncluttered",
+  "maximalist-and-collected",
+  "symmetrical-and-formal",
+  "functional-and-zoned",
 ] as const;
 
 const ROOM_TYPE_OPTIONS = [
@@ -123,6 +112,13 @@ const ROOM_TYPE_OPTIONS = [
   "desk-area",
   "other",
 ] as const;
+
+function formatLabel(value: string): string {
+  return value
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
 
 interface StyleImageCardProps {
   image: StyleImage;
@@ -140,8 +136,11 @@ export function StyleImageCard({ image, onConfirm, onDelete }: StyleImageCardPro
   const [colorPalette, setColorPalette] = React.useState<Set<string>>(
     new Set(image.colorPalette || [])
   );
-  const [materials, setMaterials] = React.useState<Set<string>>(
-    new Set(image.materials || [])
+  const [materialFocus, setMaterialFocus] = React.useState<Set<string>>(
+    new Set(image.materialFocus || [])
+  );
+  const [spatialPhilosophy, setSpatialPhilosophy] = React.useState<Set<string>>(
+    new Set(image.spatialPhilosophy || [])
   );
   const [roomType, setRoomType] = React.useState<string | undefined>(
     image.roomType
@@ -169,14 +168,24 @@ export function StyleImageCard({ image, onConfirm, onDelete }: StyleImageCardPro
     setColorPalette(newColorPalette);
   };
 
-  const handleMaterialsChange = (value: string, checked: boolean) => {
-    const newMaterials = new Set(materials);
+  const handleMaterialFocusChange = (value: string, checked: boolean) => {
+    const newMaterialFocus = new Set(materialFocus);
     if (checked) {
-      newMaterials.add(value);
+      newMaterialFocus.add(value);
     } else {
-      newMaterials.delete(value);
+      newMaterialFocus.delete(value);
     }
-    setMaterials(newMaterials);
+    setMaterialFocus(newMaterialFocus);
+  };
+
+  const handleSpatialPhilosophyChange = (value: string, checked: boolean) => {
+    const newSpatialPhilosophy = new Set(spatialPhilosophy);
+    if (checked) {
+      newSpatialPhilosophy.add(value);
+    } else {
+      newSpatialPhilosophy.delete(value);
+    }
+    setSpatialPhilosophy(newSpatialPhilosophy);
   };
 
   const handleConfirm = async () => {
@@ -189,46 +198,43 @@ export function StyleImageCard({ image, onConfirm, onDelete }: StyleImageCardPro
             ? (Array.from(style) as Array<
                 | "modern"
                 | "traditional"
-                | "minimalist"
-                | "bohemian"
-                | "industrial"
                 | "scandinavian"
-                | "other"
+                | "industrial"
+                | "bohemian"
+                | "coastal"
               >)
             : undefined,
         colorPalette:
           colorPalette.size > 0
             ? (Array.from(colorPalette) as Array<
-                | "warm"
-                | "cool"
-                | "neutral"
-                | "bold"
-                | "soft"
-                | "red"
-                | "green"
-                | "blue"
-                | "yellow"
-                | "purple"
-                | "orange"
-                | "brown"
-                | "gray"
-                | "black"
-                | "white"
+                | "light-and-airy"
+                | "dark-and-moody"
+                | "earth-tones"
+                | "monochrome"
+                | "bold-and-vibrant"
+                | "warm-neutrals"
               >)
             : undefined,
-        materials:
-          materials.size > 0
-            ? (Array.from(materials) as Array<
-                | "wood"
-                | "metal"
-                | "glass"
-                | "stone"
-                | "ceramic"
-                | "paper"
-                | "plastic"
-                | "leather"
-                | "fabric"
-                | "other"
+        materialFocus:
+          materialFocus.size > 0
+            ? (Array.from(materialFocus) as Array<
+                | "natural-wood"
+                | "metal-and-glass"
+                | "stone-and-concrete"
+                | "upholstered"
+                | "rattan-and-wicker"
+                | "painted-and-lacquered"
+              >)
+            : undefined,
+        spatialPhilosophy:
+          spatialPhilosophy.size > 0
+            ? (Array.from(spatialPhilosophy) as Array<
+                | "open-and-flowing"
+                | "cozy-and-defined"
+                | "minimal-and-uncluttered"
+                | "maximalist-and-collected"
+                | "symmetrical-and-formal"
+                | "functional-and-zoned"
               >)
             : undefined,
         roomType: roomType as
@@ -303,9 +309,9 @@ export function StyleImageCard({ image, onConfirm, onDelete }: StyleImageCardPro
                     />
                     <Label
                       htmlFor={`style-${image._id}-${option}`}
-                      className="text-xs font-normal cursor-pointer capitalize"
+                      className="text-xs font-normal cursor-pointer"
                     >
-                      {option.replace("-", " ")}
+                      {formatLabel(option)}
                     </Label>
                   </div>
                 ))}
@@ -327,33 +333,57 @@ export function StyleImageCard({ image, onConfirm, onDelete }: StyleImageCardPro
                     />
                     <Label
                       htmlFor={`color-${image._id}-${option}`}
-                      className="text-xs font-normal cursor-pointer capitalize"
+                      className="text-xs font-normal cursor-pointer"
                     >
-                      {option.replace("-", " ")}
+                      {formatLabel(option)}
                     </Label>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Materials */}
+            {/* Material Focus */}
             <div className="space-y-3">
-              <Label>Materials</Label>
+              <Label>Material Focus</Label>
               <div className="flex flex-wrap gap-3">
-                {MATERIALS_OPTIONS.map((option) => (
+                {MATERIAL_FOCUS_OPTIONS.map((option) => (
                   <div key={option} className="flex items-center gap-2">
                     <Checkbox
                       id={`material-${image._id}-${option}`}
-                      checked={materials.has(option)}
+                      checked={materialFocus.has(option)}
                       onCheckedChange={(checked) =>
-                        handleMaterialsChange(option, checked === true)
+                        handleMaterialFocusChange(option, checked === true)
                       }
                     />
                     <Label
                       htmlFor={`material-${image._id}-${option}`}
-                      className="text-xs font-normal cursor-pointer capitalize"
+                      className="text-xs font-normal cursor-pointer"
                     >
-                      {option.replace("-", " ")}
+                      {formatLabel(option)}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Spatial Philosophy */}
+            <div className="space-y-3">
+              <Label>Spatial Philosophy</Label>
+              <div className="flex flex-wrap gap-3">
+                {SPATIAL_PHILOSOPHY_OPTIONS.map((option) => (
+                  <div key={option} className="flex items-center gap-2">
+                    <Checkbox
+                      id={`spatial-${image._id}-${option}`}
+                      checked={spatialPhilosophy.has(option)}
+                      onCheckedChange={(checked) =>
+                        handleSpatialPhilosophyChange(option, checked === true)
+                      }
+                    />
+                    <Label
+                      htmlFor={`spatial-${image._id}-${option}`}
+                      className="text-xs font-normal cursor-pointer"
+                    >
+                      {formatLabel(option)}
                     </Label>
                   </div>
                 ))}
@@ -373,7 +403,7 @@ export function StyleImageCard({ image, onConfirm, onDelete }: StyleImageCardPro
                 <SelectContent>
                   {ROOM_TYPE_OPTIONS.map((option) => (
                     <SelectItem key={option} value={option}>
-                      {option.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
+                      {formatLabel(option)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -404,4 +434,3 @@ export function StyleImageCard({ image, onConfirm, onDelete }: StyleImageCardPro
     </Card>
   );
 }
-

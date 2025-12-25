@@ -14,48 +14,46 @@ export const createStyleImage = internalMutation({
         v.union(
           v.literal("modern"),
           v.literal("traditional"),
-          v.literal("minimalist"),
-          v.literal("bohemian"),
-          v.literal("industrial"),
           v.literal("scandinavian"),
-          v.literal("other")
+          v.literal("industrial"),
+          v.literal("bohemian"),
+          v.literal("coastal")
         )
       )
     ),
     colorPalette: v.optional(
       v.array(
         v.union(
-          v.literal("warm"),
-          v.literal("cool"),
-          v.literal("neutral"),
-          v.literal("bold"),
-          v.literal("soft"),
-          v.literal("red"),
-          v.literal("green"),
-          v.literal("blue"),
-          v.literal("yellow"),
-          v.literal("purple"),
-          v.literal("orange"),
-          v.literal("brown"),
-          v.literal("gray"),
-          v.literal("black"),
-          v.literal("white")
+          v.literal("light-and-airy"),
+          v.literal("dark-and-moody"),
+          v.literal("earth-tones"),
+          v.literal("monochrome"),
+          v.literal("bold-and-vibrant"),
+          v.literal("warm-neutrals")
         )
       )
     ),
-    materials: v.optional(
+    materialFocus: v.optional(
       v.array(
         v.union(
-          v.literal("wood"),
-          v.literal("metal"),
-          v.literal("glass"),
-          v.literal("stone"),
-          v.literal("ceramic"),
-          v.literal("paper"),
-          v.literal("plastic"),
-          v.literal("leather"),
-          v.literal("fabric"),
-          v.literal("other")
+          v.literal("natural-wood"),
+          v.literal("metal-and-glass"),
+          v.literal("stone-and-concrete"),
+          v.literal("upholstered"),
+          v.literal("rattan-and-wicker"),
+          v.literal("painted-and-lacquered")
+        )
+      )
+    ),
+    spatialPhilosophy: v.optional(
+      v.array(
+        v.union(
+          v.literal("open-and-flowing"),
+          v.literal("cozy-and-defined"),
+          v.literal("minimal-and-uncluttered"),
+          v.literal("maximalist-and-collected"),
+          v.literal("symmetrical-and-formal"),
+          v.literal("functional-and-zoned")
         )
       )
     ),
@@ -81,7 +79,8 @@ export const createStyleImage = internalMutation({
       confirmed: args.confirmed,
       style: args.style,
       colorPalette: args.colorPalette,
-      materials: args.materials,
+      materialFocus: args.materialFocus,
+      spatialPhilosophy: args.spatialPhilosophy,
       roomType: args.roomType,
     });
     return _id;

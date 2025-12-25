@@ -118,7 +118,7 @@ export const fetchUnsplashImages = action({
                   { unsplashUrl: optimizedUrl }
                 );
                 console.log(
-                  `Analyzed photo ${photo.id}: styles=${result.style.join(", ")}, colors=${result.colorPalette.join(", ")}, materials=${result.materials.join(", ")}, roomType=${result.roomType}`
+                  `Analyzed photo ${photo.id}: styles=${result.style.join(", ")}, colors=${result.colorPalette.join(", ")}, materials=${result.materialFocus.join(", ")}, spatial=${result.spatialPhilosophy.join(", ")}, roomType=${result.roomType}`
                 );
                 return { photo, optimizedUrl, analysisResult: result };
               } catch (error) {
@@ -141,7 +141,8 @@ export const fetchUnsplashImages = action({
                   confirmed: false, // Will be confirmed after manual review
                   style: analysisResult?.style,
                   colorPalette: analysisResult?.colorPalette,
-                  materials: analysisResult?.materials,
+                  materialFocus: analysisResult?.materialFocus,
+                  spatialPhilosophy: analysisResult?.spatialPhilosophy,
                   roomType: analysisResult?.roomType,
                 })
               )
