@@ -123,6 +123,7 @@ export const fetchUnsplashImages = action({
                 return { photo, optimizedUrl, analysisResult: result };
               } catch (error) {
                 console.error(`Error analyzing photo ${photo.id}:`, error);
+                stats.totalErrors++;
                 return { photo, optimizedUrl, analysisResult: undefined };
               }
             });
