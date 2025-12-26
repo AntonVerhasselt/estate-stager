@@ -18,107 +18,31 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import type {
+  Style,
+  ColorPalette,
+  MaterialFocus,
+  SpatialPhilosophy,
+  RoomType,
+} from "@/types/design";
+import {
+  STYLE_OPTIONS,
+  COLOR_PALETTE_OPTIONS,
+  MATERIAL_FOCUS_OPTIONS,
+  SPATIAL_PHILOSOPHY_OPTIONS,
+  ROOM_TYPE_OPTIONS,
+} from "@/types/design";
 
 type StyleImage = {
   _id: Id<"styleImages">;
   unsplashUrl: string;
   searchKeyword: string;
-  style?: Array<
-    | "modern"
-    | "traditional"
-    | "scandinavian"
-    | "industrial"
-    | "bohemian"
-    | "coastal"
-  >;
-  colorPalette?: Array<
-    | "light-and-airy"
-    | "dark-and-moody"
-    | "earth-tones"
-    | "monochrome"
-    | "bold-and-vibrant"
-    | "warm-neutrals"
-  >;
-  materialFocus?: Array<
-    | "natural-wood"
-    | "metal-and-glass"
-    | "stone-and-concrete"
-    | "upholstered"
-    | "rattan-and-wicker"
-    | "painted-and-lacquered"
-  >;
-  spatialPhilosophy?: Array<
-    | "open-and-flowing"
-    | "cozy-and-defined"
-    | "minimal-and-uncluttered"
-    | "maximalist-and-collected"
-    | "symmetrical-and-formal"
-    | "functional-and-zoned"
-  >;
-  roomType?:
-    | "living-room"
-    | "kitchen"
-    | "bedroom"
-    | "bathroom"
-    | "garden"
-    | "hall"
-    | "desk-area"
-    | "other";
+  style?: Style[];
+  colorPalette?: ColorPalette[];
+  materialFocus?: MaterialFocus[];
+  spatialPhilosophy?: SpatialPhilosophy[];
+  roomType?: RoomType;
 };
-
-const STYLE_OPTIONS = [
-  "modern",
-  "traditional",
-  "scandinavian",
-  "industrial",
-  "bohemian",
-  "coastal",
-] as const;
-
-const COLOR_PALETTE_OPTIONS = [
-  "light-and-airy",
-  "dark-and-moody",
-  "earth-tones",
-  "monochrome",
-  "bold-and-vibrant",
-  "warm-neutrals",
-] as const;
-
-const MATERIAL_FOCUS_OPTIONS = [
-  "natural-wood",
-  "metal-and-glass",
-  "stone-and-concrete",
-  "upholstered",
-  "rattan-and-wicker",
-  "painted-and-lacquered",
-] as const;
-
-const SPATIAL_PHILOSOPHY_OPTIONS = [
-  "open-and-flowing",
-  "cozy-and-defined",
-  "minimal-and-uncluttered",
-  "maximalist-and-collected",
-  "symmetrical-and-formal",
-  "functional-and-zoned",
-] as const;
-
-const ROOM_TYPE_OPTIONS = [
-  "living-room",
-  "kitchen",
-  "bedroom",
-  "bathroom",
-  "garden",
-  "hall",
-  "desk-area",
-  "other",
-] as const;
-
-function formatLabel(value: string): string {
-  return value
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
 
 interface StyleImageCardProps {
   image: StyleImage;
@@ -195,58 +119,21 @@ export function StyleImageCard({ image, onConfirm, onDelete }: StyleImageCardPro
         id: image._id,
         style:
           style.size > 0
-            ? (Array.from(style) as Array<
-                | "modern"
-                | "traditional"
-                | "scandinavian"
-                | "industrial"
-                | "bohemian"
-                | "coastal"
-              >)
+            ? (Array.from(style) as Style[])
             : undefined,
         colorPalette:
           colorPalette.size > 0
-            ? (Array.from(colorPalette) as Array<
-                | "light-and-airy"
-                | "dark-and-moody"
-                | "earth-tones"
-                | "monochrome"
-                | "bold-and-vibrant"
-                | "warm-neutrals"
-              >)
+            ? (Array.from(colorPalette) as ColorPalette[])
             : undefined,
         materialFocus:
           materialFocus.size > 0
-            ? (Array.from(materialFocus) as Array<
-                | "natural-wood"
-                | "metal-and-glass"
-                | "stone-and-concrete"
-                | "upholstered"
-                | "rattan-and-wicker"
-                | "painted-and-lacquered"
-              >)
+            ? (Array.from(materialFocus) as MaterialFocus[])
             : undefined,
         spatialPhilosophy:
           spatialPhilosophy.size > 0
-            ? (Array.from(spatialPhilosophy) as Array<
-                | "open-and-flowing"
-                | "cozy-and-defined"
-                | "minimal-and-uncluttered"
-                | "maximalist-and-collected"
-                | "symmetrical-and-formal"
-                | "functional-and-zoned"
-              >)
+            ? (Array.from(spatialPhilosophy) as SpatialPhilosophy[])
             : undefined,
-        roomType: roomType as
-          | "living-room"
-          | "kitchen"
-          | "bedroom"
-          | "bathroom"
-          | "garden"
-          | "hall"
-          | "desk-area"
-          | "other"
-          | undefined,
+        roomType: roomType as RoomType | undefined,
       });
       toast.success("Style image confirmed");
       onConfirm?.();
@@ -299,19 +186,19 @@ export function StyleImageCard({ image, onConfirm, onDelete }: StyleImageCardPro
               <Label>Style</Label>
               <div className="flex flex-wrap gap-3">
                 {STYLE_OPTIONS.map((option) => (
-                  <div key={option} className="flex items-center gap-2">
+                  <div key={option.value} className="flex items-center gap-2">
                     <Checkbox
-                      id={`style-${image._id}-${option}`}
-                      checked={style.has(option)}
+                      id={`style-${image._id}-${option.value}`}
+                      checked={style.has(option.value)}
                       onCheckedChange={(checked) =>
-                        handleStyleChange(option, checked === true)
+                        handleStyleChange(option.value, checked === true)
                       }
                     />
                     <Label
-                      htmlFor={`style-${image._id}-${option}`}
+                      htmlFor={`style-${image._id}-${option.value}`}
                       className="text-xs font-normal cursor-pointer"
                     >
-                      {formatLabel(option)}
+                      {option.label}
                     </Label>
                   </div>
                 ))}
@@ -323,19 +210,19 @@ export function StyleImageCard({ image, onConfirm, onDelete }: StyleImageCardPro
               <Label>Color Palette</Label>
               <div className="flex flex-wrap gap-3">
                 {COLOR_PALETTE_OPTIONS.map((option) => (
-                  <div key={option} className="flex items-center gap-2">
+                  <div key={option.value} className="flex items-center gap-2">
                     <Checkbox
-                      id={`color-${image._id}-${option}`}
-                      checked={colorPalette.has(option)}
+                      id={`color-${image._id}-${option.value}`}
+                      checked={colorPalette.has(option.value)}
                       onCheckedChange={(checked) =>
-                        handleColorPaletteChange(option, checked === true)
+                        handleColorPaletteChange(option.value, checked === true)
                       }
                     />
                     <Label
-                      htmlFor={`color-${image._id}-${option}`}
+                      htmlFor={`color-${image._id}-${option.value}`}
                       className="text-xs font-normal cursor-pointer"
                     >
-                      {formatLabel(option)}
+                      {option.label}
                     </Label>
                   </div>
                 ))}
@@ -347,19 +234,19 @@ export function StyleImageCard({ image, onConfirm, onDelete }: StyleImageCardPro
               <Label>Material Focus</Label>
               <div className="flex flex-wrap gap-3">
                 {MATERIAL_FOCUS_OPTIONS.map((option) => (
-                  <div key={option} className="flex items-center gap-2">
+                  <div key={option.value} className="flex items-center gap-2">
                     <Checkbox
-                      id={`material-${image._id}-${option}`}
-                      checked={materialFocus.has(option)}
+                      id={`material-${image._id}-${option.value}`}
+                      checked={materialFocus.has(option.value)}
                       onCheckedChange={(checked) =>
-                        handleMaterialFocusChange(option, checked === true)
+                        handleMaterialFocusChange(option.value, checked === true)
                       }
                     />
                     <Label
-                      htmlFor={`material-${image._id}-${option}`}
+                      htmlFor={`material-${image._id}-${option.value}`}
                       className="text-xs font-normal cursor-pointer"
                     >
-                      {formatLabel(option)}
+                      {option.label}
                     </Label>
                   </div>
                 ))}
@@ -371,19 +258,19 @@ export function StyleImageCard({ image, onConfirm, onDelete }: StyleImageCardPro
               <Label>Spatial Philosophy</Label>
               <div className="flex flex-wrap gap-3">
                 {SPATIAL_PHILOSOPHY_OPTIONS.map((option) => (
-                  <div key={option} className="flex items-center gap-2">
+                  <div key={option.value} className="flex items-center gap-2">
                     <Checkbox
-                      id={`spatial-${image._id}-${option}`}
-                      checked={spatialPhilosophy.has(option)}
+                      id={`spatial-${image._id}-${option.value}`}
+                      checked={spatialPhilosophy.has(option.value)}
                       onCheckedChange={(checked) =>
-                        handleSpatialPhilosophyChange(option, checked === true)
+                        handleSpatialPhilosophyChange(option.value, checked === true)
                       }
                     />
                     <Label
-                      htmlFor={`spatial-${image._id}-${option}`}
+                      htmlFor={`spatial-${image._id}-${option.value}`}
                       className="text-xs font-normal cursor-pointer"
                     >
-                      {formatLabel(option)}
+                      {option.label}
                     </Label>
                   </div>
                 ))}
@@ -402,8 +289,8 @@ export function StyleImageCard({ image, onConfirm, onDelete }: StyleImageCardPro
                 </SelectTrigger>
                 <SelectContent>
                   {ROOM_TYPE_OPTIONS.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {formatLabel(option)}
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

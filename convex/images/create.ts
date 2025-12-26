@@ -3,13 +3,13 @@ import { v } from "convex/values";
 
 // Room type validator matching the schema
 const roomTypeValidator = v.union(
-  v.literal("living-room"),
+  v.literal("livingRoom"),
   v.literal("kitchen"),
   v.literal("bedroom"),
   v.literal("bathroom"),
   v.literal("garden"),
   v.literal("hall"),
-  v.literal("desk-area"),
+  v.literal("deskArea"),
   v.literal("other")
 );
 

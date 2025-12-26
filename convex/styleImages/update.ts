@@ -20,48 +20,48 @@ export const confirmStyleImage = mutation({
     colorPalette: v.optional(
       v.array(
         v.union(
-          v.literal("light-and-airy"),
-          v.literal("dark-and-moody"),
-          v.literal("earth-tones"),
+          v.literal("lightAndAiry"),
+          v.literal("darkAndMoody"),
+          v.literal("earthTones"),
           v.literal("monochrome"),
-          v.literal("bold-and-vibrant"),
-          v.literal("warm-neutrals")
+          v.literal("boldAndVibrant"),
+          v.literal("warmNeutrals")
         )
       )
     ),
     materialFocus: v.optional(
       v.array(
         v.union(
-          v.literal("natural-wood"),
-          v.literal("metal-and-glass"),
-          v.literal("stone-and-concrete"),
+          v.literal("naturalWood"),
+          v.literal("metalAndGlass"),
+          v.literal("stoneAndConcrete"),
           v.literal("upholstered"),
-          v.literal("rattan-and-wicker"),
-          v.literal("painted-and-lacquered")
+          v.literal("rattanAndWicker"),
+          v.literal("paintedAndLacquered")
         )
       )
     ),
     spatialPhilosophy: v.optional(
       v.array(
         v.union(
-          v.literal("open-and-flowing"),
-          v.literal("cozy-and-defined"),
-          v.literal("minimal-and-uncluttered"),
-          v.literal("maximalist-and-collected"),
-          v.literal("symmetrical-and-formal"),
-          v.literal("functional-and-zoned")
+          v.literal("openAndFlowing"),
+          v.literal("cozyAndDefined"),
+          v.literal("minimalAndUncluttered"),
+          v.literal("maximalistAndCollected"),
+          v.literal("symmetricalAndFormal"),
+          v.literal("functionalAndZoned")
         )
       )
     ),
     roomType: v.optional(
       v.union(
-        v.literal("living-room"),
+        v.literal("livingRoom"),
         v.literal("kitchen"),
         v.literal("bedroom"),
         v.literal("bathroom"),
         v.literal("garden"),
         v.literal("hall"),
-        v.literal("desk-area"),
+        v.literal("deskArea"),
         v.literal("other")
       )
     ),

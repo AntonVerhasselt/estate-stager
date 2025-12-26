@@ -83,21 +83,12 @@ import {
   AddImagesSheet,
   type PendingImage,
 } from "@/components/property/add-images-sheet"
-import { type RoomType as ImageGalleryRoomType } from "@/components/add-property/image-gallery"
+import type { RoomType } from "@/types/design"
 
 // ============================================================================
 // TYPES
 // ============================================================================
 type PropertyStatus = "available" | "sold"
-type RoomType =
-  | "living-room"
-  | "kitchen"
-  | "bedroom"
-  | "bathroom"
-  | "garden"
-  | "hall"
-  | "desk-area"
-  | "other"
 type SortDirection = "asc" | "desc" | null
 type SortColumn = "startAt" | "prospectName" | "status" | null
 
@@ -142,13 +133,13 @@ function formatDate(date: Date): string {
 
 function getRoomTypeLabel(roomType: RoomType): string {
   const labels: Record<RoomType, string> = {
-    "living-room": "Living Room",
+    livingRoom: "Living Room",
     kitchen: "Kitchen",
     bedroom: "Bedroom",
     bathroom: "Bathroom",
     garden: "Garden",
     hall: "Hall",
-    "desk-area": "Desk Area",
+    deskArea: "Desk Area",
     other: "Other",
   }
   return labels[roomType]
@@ -156,13 +147,13 @@ function getRoomTypeLabel(roomType: RoomType): string {
 
 function getRoomTypeIcon(roomType: RoomType) {
   const icons: Record<RoomType, React.ReactNode> = {
-    "living-room": <Sofa className="size-3.5" />,
+    livingRoom: <Sofa className="size-3.5" />,
     kitchen: <ChefHat className="size-3.5" />,
     bedroom: <BedDouble className="size-3.5" />,
     bathroom: <Bath className="size-3.5" />,
     garden: <Trees className="size-3.5" />,
     hall: <DoorOpen className="size-3.5" />,
-    "desk-area": <Monitor className="size-3.5" />,
+    deskArea: <Monitor className="size-3.5" />,
     other: <ImageIcon className="size-3.5" />,
   }
   return icons[roomType]
@@ -869,7 +860,7 @@ export default function PropertyDetailPage({
           
           return {
             storageId,
-            roomType: img.roomType as ImageGalleryRoomType,
+            roomType: img.roomType as RoomType,
           }
         })
       )
