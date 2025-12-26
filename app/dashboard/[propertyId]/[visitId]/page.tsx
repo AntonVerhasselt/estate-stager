@@ -137,6 +137,8 @@ export default function VisitDetailPage({
   const [styleProfile, setStyleProfile] = React.useState<StyleProfile | null>(
     null
   )
+  const [prospectLinkFull, setProspectLinkFull] = React.useState("")
+  const [prospectLinkDisplay, setProspectLinkDisplay] = React.useState("")
 
   // Set style profile for prepared/completed visits (mock for now)
   React.useEffect(() => {
@@ -146,6 +148,14 @@ export default function VisitDetailPage({
       setStyleProfile(null)
     }
   }, [visitData?.visit?.status])
+
+  // Compute prospect links on client-side only (window is not available during SSR)
+  React.useEffect(() => {
+    if (visitData?.visit?.prospectLinkId) {
+      setProspectLinkFull(`${window.location.origin}/${visitData.visit.prospectLinkId}`)
+      setProspectLinkDisplay(`${window.location.host}/${visitData.visit.prospectLinkId}`)
+    }
+  }, [visitData?.visit?.prospectLinkId])
 
   // Loading state
   if (visitData === undefined) {
@@ -187,10 +197,6 @@ export default function VisitDetailPage({
     id: visitData.property._id,
     address: visitData.property.address,
   }
-
-  // Generate prospect link - full URL for copying, display version for UI
-  const prospectLinkFull = `${window.location.origin}/${visitData.visit.prospectLinkId}`
-  const prospectLinkDisplay = `${window.location.host}/${visitData.visit.prospectLinkId}`
 
   // Map generated images to StagedImage format
   const stagedImages: StagedImage[] = visitData.generatedImages.map((img) => ({
