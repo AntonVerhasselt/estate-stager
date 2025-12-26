@@ -53,6 +53,8 @@ type StyleRadarChartProps = {
   scores: StyleScores;
   /** Show all 4 dimensions or just one */
   dimension?: keyof StyleScores;
+  /** Custom className for the grid container when showing all dimensions */
+  gridClassName?: string;
 };
 
 // ============================================================================
@@ -236,7 +238,7 @@ function SingleRadarChart({
 // ============================================================================
 // MAIN COMPONENT
 // ============================================================================
-export function StyleRadarChart({ scores, dimension }: StyleRadarChartProps) {
+export function StyleRadarChart({ scores, dimension, gridClassName }: StyleRadarChartProps) {
   // If a specific dimension is requested, show only that one
   if (dimension) {
     const data = normalizeScores(scores[dimension]);
@@ -251,8 +253,9 @@ export function StyleRadarChart({ scores, dimension }: StyleRadarChartProps) {
   }
 
   // Show all 4 dimensions in a grid
+  const defaultGridClassName = "grid gap-4 grid-cols-1 sm:grid-cols-2";
   return (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+    <div className={gridClassName || defaultGridClassName}>
       {(Object.keys(DIMENSION_LABELS) as Array<keyof StyleScores>).map((dim) => {
         const data = normalizeScores(scores[dim]);
         return (

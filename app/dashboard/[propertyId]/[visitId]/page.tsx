@@ -21,6 +21,7 @@ import {
   User,
   XCircle,
   Palette,
+  Share2,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -43,12 +44,7 @@ import {
   type VisitStatus,
   type VisitFormData,
 } from "@/components/visits/visit-sheet"
-import {
-  StylePreferences,
-  mockStyleProfile,
-  type StyleProfile,
-  type StylePreference,
-} from "@/components/visits/style-preferences"
+import { StyleRadarChart } from "@/components/profile/style-radar-chart"
 import {
   StagedImageGallery,
   type StagedImage,
@@ -124,6 +120,12 @@ export default function VisitDetailPage({
     visitId: resolvedParams.visitId as Id<"visits">,
   })
 
+  // Fetch style profile
+  const styleProfile = useQuery(
+    api.styleProfiles.get.getStyleProfileByVisit,
+    visitData?.visit ? { visitId: visitData.visit._id } : "skip"
+  )
+
   // Mutations
   const cancelVisitMutation = useMutation(api.visits.update.cancelVisit)
   const updateVisitMutation = useMutation(api.visits.update.updateVisit)
@@ -134,20 +136,9 @@ export default function VisitDetailPage({
   const [linkCopied, setLinkCopied] = React.useState(false)
   const [isCancelling, setIsCancelling] = React.useState(false)
   const [isUpdating, setIsUpdating] = React.useState(false)
-  const [styleProfile, setStyleProfile] = React.useState<StyleProfile | null>(
-    null
-  )
+  const [styleLinkCopied, setStyleLinkCopied] = React.useState(false)
   const [prospectLinkFull, setProspectLinkFull] = React.useState("")
   const [prospectLinkDisplay, setProspectLinkDisplay] = React.useState("")
-
-  // Set style profile for prepared/completed visits (mock for now)
-  React.useEffect(() => {
-    if (visitData?.visit?.status === "prepared" || visitData?.visit?.status === "completed") {
-      setStyleProfile(mockStyleProfile)
-    } else {
-      setStyleProfile(null)
-    }
-  }, [visitData?.visit?.status])
 
   // Compute prospect links on client-side only (window is not available during SSR)
   React.useEffect(() => {
@@ -260,8 +251,15 @@ export default function VisitDetailPage({
     console.log("Generate all images")
   }
 
-  const handleUpdateStylePreferences = (preferences: StylePreference[]) => {
-    setStyleProfile((prev) => (prev ? { ...prev, preferences } : null))
+  const handleCopyStyleLink = async () => {
+    if (!prospectLinkDisplay) return
+    try {
+      await navigator.clipboard.writeText(`https://${prospectLinkDisplay}`)
+      setStyleLinkCopied(true)
+      setTimeout(() => setStyleLinkCopied(false), 2000)
+    } catch (err) {
+      console.error("Failed to copy link:", err)
+    }
   }
 
   const handleCopyLink = async () => {
@@ -405,12 +403,37 @@ export default function VisitDetailPage({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <StylePreferences
-              profile={styleProfile}
-              onUpdate={handleUpdateStylePreferences}
-              editable={visit.status === "prepared"}
-              prospectLink={prospectLinkDisplay}
-            />
+            {!styleProfile ? (
+              <div className="flex flex-col items-center justify-center rounded-none border border-dashed border-border bg-muted/30 py-10 px-4 text-center">
+                <div className="mb-3 rounded-none bg-muted p-3">
+                  <Clock className="size-6 text-muted-foreground" />
+                </div>
+                <h3 className="text-sm font-medium mb-1">Awaiting style preferences</h3>
+                <p className="text-xs text-muted-foreground max-w-xs mb-4">
+                  Share the link below so the prospect can swipe through design styles.
+                </p>
+                {prospectLinkDisplay && (
+                  <Button variant="outline" size="sm" onClick={handleCopyStyleLink}>
+                    {styleLinkCopied ? (
+                      <>
+                        <Check data-icon="inline-start" className="text-primary" />
+                        Link copied!
+                      </>
+                    ) : (
+                      <>
+                        <Share2 data-icon="inline-start" />
+                        Copy style quiz link
+                      </>
+                    )}
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <StyleRadarChart 
+                scores={styleProfile.scores} 
+                gridClassName="grid gap-4 grid-cols-2 lg:grid-cols-4"
+              />
+            )}
           </CardContent>
         </Card>
 
@@ -428,7 +451,7 @@ export default function VisitDetailPage({
               onDelete={handleDeleteStagedImage}
               onRegenerate={handleRegenerateStagedImage}
               onGenerateAll={handleGenerateAllImages}
-              hasStyleProfile={styleProfile !== null}
+              hasStyleProfile={styleProfile !== null && styleProfile !== undefined}
               prospectLink={prospectLinkDisplay}
               visitStatus={visit.status}
             />
