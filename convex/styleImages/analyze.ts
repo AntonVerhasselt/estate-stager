@@ -8,44 +8,40 @@ import { GoogleGenAI, Type } from "@google/genai";
 const STYLE_OPTIONS = [
   "modern",
   "traditional",
-  "minimalist",
-  "bohemian",
-  "industrial",
   "scandinavian",
-  "other",
+  "industrial",
+  "bohemian",
+  "coastal",
 ] as const;
 
 // Color palette options matching the schema
 const COLOR_PALETTE_OPTIONS = [
-  "warm",
-  "cool",
-  "neutral",
-  "bold",
-  "soft",
-  "red",
-  "green",
-  "blue",
-  "yellow",
-  "purple",
-  "orange",
-  "brown",
-  "gray",
-  "black",
-  "white",
+  "light-and-airy",
+  "dark-and-moody",
+  "earth-tones",
+  "monochrome",
+  "bold-and-vibrant",
+  "warm-neutrals",
 ] as const;
 
-// Materials options matching the schema
-const MATERIALS_OPTIONS = [
-  "wood",
-  "metal",
-  "glass",
-  "stone",
-  "ceramic",
-  "paper",
-  "plastic",
-  "leather",
-  "fabric",
-  "other",
+// Material focus options matching the schema
+const MATERIAL_FOCUS_OPTIONS = [
+  "natural-wood",
+  "metal-and-glass",
+  "stone-and-concrete",
+  "upholstered",
+  "rattan-and-wicker",
+  "painted-and-lacquered",
+] as const;
+
+// Spatial philosophy options matching the schema
+const SPATIAL_PHILOSOPHY_OPTIONS = [
+  "open-and-flowing",
+  "cozy-and-defined",
+  "minimal-and-uncluttered",
+  "maximalist-and-collected",
+  "symmetrical-and-formal",
+  "functional-and-zoned",
 ] as const;
 
 // Room type options matching the schema
@@ -67,15 +63,41 @@ Your task is to analyze interior design images and extract key visual characteri
 
 When analyzing an image, carefully examine:
 
-1. **Style**: Identify the dominant interior design style(s) present. Look at furniture shapes, architectural elements, decorative patterns, and overall aesthetic. A space can reflect multiple styles (e.g., a modern room with industrial accents).
+1. **Style** - Identify the dominant interior design style(s):
+   - **modern**: Clean lines, minimal ornamentation, functional
+   - **traditional**: Classic furniture, rich woods, symmetrical layouts
+   - **scandinavian**: Light woods, hygge comfort, functional simplicity
+   - **industrial**: Exposed brick, metal frames, raw materials
+   - **bohemian**: Layered textiles, global patterns, eclectic mix
+   - **coastal**: Light blues, whitewashed wood, beachy textures
 
-2. **Color Palette**: Identify both the mood/temperature of colors (warm, cool, neutral, bold, soft) AND the specific dominant colors visible. Focus on walls, large furniture pieces, textiles, and accent colors.
+2. **Color Palette** - Identify the dominant color mood:
+   - **light-and-airy**: Whites, creams, soft pastels, bright
+   - **dark-and-moody**: Charcoal, navy, deep tones, dramatic
+   - **earth-tones**: Terracotta, ochre, sage, warm naturals
+   - **monochrome**: Black, white, grayscale, tonal only
+   - **bold-and-vibrant**: Jewel tones, saturated pops, energetic
+   - **warm-neutrals**: Beige, camel, warm gray, taupe
 
-3. **Materials**: Identify the primary materials visible in furniture, flooring, fixtures, and decorative elements. Look at textures and finishes carefully.
+3. **Material Focus** - Identify the primary materials visible:
+   - **natural-wood**: Oak, walnut, pine, exposed beams
+   - **metal-and-glass**: Steel, chrome, glass, mirrors
+   - **stone-and-concrete**: Marble, granite, raw concrete
+   - **upholstered**: Velvet, linen, leather, soft fabrics
+   - **rattan-and-wicker**: Cane, seagrass, woven textures
+   - **painted-and-lacquered**: High-gloss, colored, lacquered surfaces
 
-4. **Room Type**: Identify the type of room shown in the image based on the furniture, fixtures, layout, and architectural features present.
+4. **Spatial Philosophy** - Identify the spatial arrangement approach:
+   - **open-and-flowing**: Open concept, seamless transitions
+   - **cozy-and-defined**: Separate rooms, intimate nooks
+   - **minimal-and-uncluttered**: Negative space, essential only
+   - **maximalist-and-collected**: Full walls, layered decor
+   - **symmetrical-and-formal**: Balanced layouts, paired furniture
+   - **functional-and-zoned**: Clear purpose, practical flow
 
-Be selective and precise - only include the TOP 2 most prominent values for each category. Focus on what dominates the space, not subtle accents.`;
+5. **Room Type** - Identify the type of room shown based on furniture, fixtures, layout, and architectural features.
+
+Be selective and precise - only include the TOP 2 most prominent values for style, color palette, material focus, and spatial philosophy. Focus on what dominates the space, not subtle accents.`;
 
 // Response schema for structured output
 const analysisResponseSchema = {
@@ -99,17 +121,27 @@ const analysisResponseSchema = {
       },
       maxItems: "2",
       description:
-        "The top 1-2 most dominant color characteristics of the space.",
+        "The top 1-2 most dominant color palette characteristics of the space.",
     },
-    materials: {
+    materialFocus: {
       type: Type.ARRAY,
       items: {
         type: Type.STRING,
-        enum: [...MATERIALS_OPTIONS],
+        enum: [...MATERIAL_FOCUS_OPTIONS],
       },
       maxItems: "2",
       description:
-        "The top 1-2 most prominent materials visible in the space.",
+        "The top 1-2 most prominent material types visible in the space.",
+    },
+    spatialPhilosophy: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.STRING,
+        enum: [...SPATIAL_PHILOSOPHY_OPTIONS],
+      },
+      maxItems: "2",
+      description:
+        "The top 1-2 most prominent spatial arrangement approaches in the space.",
     },
     roomType: {
       type: Type.STRING,
@@ -117,14 +149,15 @@ const analysisResponseSchema = {
       description: "The type of room shown in the image.",
     },
   },
-  required: ["style", "colorPalette", "materials", "roomType"],
+  required: ["style", "colorPalette", "materialFocus", "spatialPhilosophy", "roomType"],
 };
 
 // Type for the analysis result
 export interface StyleAnalysisResult {
   style: (typeof STYLE_OPTIONS)[number][];
   colorPalette: (typeof COLOR_PALETTE_OPTIONS)[number][];
-  materials: (typeof MATERIALS_OPTIONS)[number][];
+  materialFocus: (typeof MATERIAL_FOCUS_OPTIONS)[number][];
+  spatialPhilosophy: (typeof SPATIAL_PHILOSOPHY_OPTIONS)[number][];
   roomType: (typeof ROOM_TYPE_OPTIONS)[number];
 }
 
@@ -170,7 +203,7 @@ export const analyzeStyleImage = internalAction({
               },
             },
             {
-              text: "Analyze this interior design image and identify the style, color palette, materials, and room type. For style, color palette, and materials, select only the TOP 1-2 most dominant values - no more than 2 per category. For room type, select the single most appropriate category.",
+              text: "Analyze this interior design image and identify the style, color palette, material focus, spatial philosophy, and room type. For style, color palette, material focus, and spatial philosophy, select only the TOP 1-2 most dominant values - no more than 2 per category. For room type, select the single most appropriate category.",
             },
           ],
         },
@@ -194,7 +227,8 @@ export const analyzeStyleImage = internalAction({
     if (
       !Array.isArray(analysisResult.style) ||
       !Array.isArray(analysisResult.colorPalette) ||
-      !Array.isArray(analysisResult.materials) ||
+      !Array.isArray(analysisResult.materialFocus) ||
+      !Array.isArray(analysisResult.spatialPhilosophy) ||
       !analysisResult.roomType
     ) {
       throw new Error("Invalid response structure from Gemini API");

@@ -1,14 +1,10 @@
-import { internalMutation } from "../_generated/server";
+import { mutation } from "../_generated/server";
 import { v } from "convex/values";
 
-// Create a new styleImage record
-export const createStyleImage = internalMutation({
+// Confirm a style image and update its properties
+export const confirmStyleImage = mutation({
   args: {
-    unsplashId: v.string(),
-    unsplashUrl: v.string(),
-    unsplashBlurHash: v.optional(v.string()),
-    searchKeyword: v.string(),
-    confirmed: v.boolean(),
+    id: v.id("styleImages"),
     style: v.optional(
       v.array(
         v.union(
@@ -71,18 +67,35 @@ export const createStyleImage = internalMutation({
     ),
   },
   handler: async (ctx, args) => {
-    const _id = await ctx.db.insert("styleImages", {
-      unsplashId: args.unsplashId,
-      unsplashUrl: args.unsplashUrl,
-      unsplashBlurHash: args.unsplashBlurHash,
-      searchKeyword: args.searchKeyword,
-      confirmed: args.confirmed,
-      style: args.style,
-      colorPalette: args.colorPalette,
-      materialFocus: args.materialFocus,
-      spatialPhilosophy: args.spatialPhilosophy,
-      roomType: args.roomType,
+    // Verify authentication
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    const { id, ...updates } = args;
+    await ctx.db.patch(id, {
+      confirmed: true,
+      ...updates,
     });
-    return _id;
   },
 });
+
+// Soft delete a style image
+export const softDeleteStyleImage = mutation({
+  args: {
+    id: v.id("styleImages"),
+  },
+  handler: async (ctx, args) => {
+    // Verify authentication
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    await ctx.db.patch(args.id, {
+      deleted: true,
+    });
+  },
+});
+
