@@ -10,10 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  RoomType,
-  ROOM_TYPE_OPTIONS,
-} from "@/components/add-property/image-gallery"
+import type { RoomType } from "@/types/design"
+import { ROOM_TYPE_OPTIONS } from "@/types/design"
 
 // ============================================================================
 // TYPES

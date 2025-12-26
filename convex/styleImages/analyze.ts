@@ -16,43 +16,43 @@ const STYLE_OPTIONS = [
 
 // Color palette options matching the schema
 const COLOR_PALETTE_OPTIONS = [
-  "light-and-airy",
-  "dark-and-moody",
-  "earth-tones",
+  "lightAndAiry",
+  "darkAndMoody",
+  "earthTones",
   "monochrome",
-  "bold-and-vibrant",
-  "warm-neutrals",
+  "boldAndVibrant",
+  "warmNeutrals",
 ] as const;
 
 // Material focus options matching the schema
 const MATERIAL_FOCUS_OPTIONS = [
-  "natural-wood",
-  "metal-and-glass",
-  "stone-and-concrete",
+  "naturalWood",
+  "metalAndGlass",
+  "stoneAndConcrete",
   "upholstered",
-  "rattan-and-wicker",
-  "painted-and-lacquered",
+  "rattanAndWicker",
+  "paintedAndLacquered",
 ] as const;
 
 // Spatial philosophy options matching the schema
 const SPATIAL_PHILOSOPHY_OPTIONS = [
-  "open-and-flowing",
-  "cozy-and-defined",
-  "minimal-and-uncluttered",
-  "maximalist-and-collected",
-  "symmetrical-and-formal",
-  "functional-and-zoned",
+  "openAndFlowing",
+  "cozyAndDefined",
+  "minimalAndUncluttered",
+  "maximalistAndCollected",
+  "symmetricalAndFormal",
+  "functionalAndZoned",
 ] as const;
 
 // Room type options matching the schema
 const ROOM_TYPE_OPTIONS = [
-  "living-room",
+  "livingRoom",
   "kitchen",
   "bedroom",
   "bathroom",
   "garden",
   "hall",
-  "desk-area",
+  "deskArea",
   "other",
 ] as const;
 
@@ -72,28 +72,28 @@ When analyzing an image, carefully examine:
    - **coastal**: Light blues, whitewashed wood, beachy textures
 
 2. **Color Palette** - Identify the dominant color mood:
-   - **light-and-airy**: Whites, creams, soft pastels, bright
-   - **dark-and-moody**: Charcoal, navy, deep tones, dramatic
-   - **earth-tones**: Terracotta, ochre, sage, warm naturals
+   - **lightAndAiry**: Whites, creams, soft pastels, bright
+   - **darkAndMoody**: Charcoal, navy, deep tones, dramatic
+   - **earthTones**: Terracotta, ochre, sage, warm naturals
    - **monochrome**: Black, white, grayscale, tonal only
-   - **bold-and-vibrant**: Jewel tones, saturated pops, energetic
-   - **warm-neutrals**: Beige, camel, warm gray, taupe
+   - **boldAndVibrant**: Jewel tones, saturated pops, energetic
+   - **warmNeutrals**: Beige, camel, warm gray, taupe
 
 3. **Material Focus** - Identify the primary materials visible:
-   - **natural-wood**: Oak, walnut, pine, exposed beams
-   - **metal-and-glass**: Steel, chrome, glass, mirrors
-   - **stone-and-concrete**: Marble, granite, raw concrete
+   - **naturalWood**: Oak, walnut, pine, exposed beams
+   - **metalAndGlass**: Steel, chrome, glass, mirrors
+   - **stoneAndConcrete**: Marble, granite, raw concrete
    - **upholstered**: Velvet, linen, leather, soft fabrics
-   - **rattan-and-wicker**: Cane, seagrass, woven textures
-   - **painted-and-lacquered**: High-gloss, colored, lacquered surfaces
+   - **rattanAndWicker**: Cane, seagrass, woven textures
+   - **paintedAndLacquered**: High-gloss, colored, lacquered surfaces
 
 4. **Spatial Philosophy** - Identify the spatial arrangement approach:
-   - **open-and-flowing**: Open concept, seamless transitions
-   - **cozy-and-defined**: Separate rooms, intimate nooks
-   - **minimal-and-uncluttered**: Negative space, essential only
-   - **maximalist-and-collected**: Full walls, layered decor
-   - **symmetrical-and-formal**: Balanced layouts, paired furniture
-   - **functional-and-zoned**: Clear purpose, practical flow
+   - **openAndFlowing**: Open concept, seamless transitions
+   - **cozyAndDefined**: Separate rooms, intimate nooks
+   - **minimalAndUncluttered**: Negative space, essential only
+   - **maximalistAndCollected**: Full walls, layered decor
+   - **symmetricalAndFormal**: Balanced layouts, paired furniture
+   - **functionalAndZoned**: Clear purpose, practical flow
 
 5. **Room Type** - Identify the type of room shown based on furniture, fixtures, layout, and architectural features.
 

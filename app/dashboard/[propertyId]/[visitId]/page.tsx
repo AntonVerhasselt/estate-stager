@@ -71,10 +71,10 @@ function formatDateTime(date: Date): string {
 
 // Map database roomType to StagedImage RoomType
 function mapRoomType(
-  dbRoomType: "living-room" | "kitchen" | "bedroom" | "bathroom" | "garden" | "hall" | "desk-area" | "other"
+  dbRoomType: "livingRoom" | "kitchen" | "bedroom" | "bathroom" | "garden" | "hall" | "deskArea" | "other"
 ): RoomType {
   switch (dbRoomType) {
-    case "living-room":
+    case "livingRoom":
       return "living"
     case "kitchen":
     case "bedroom":
@@ -82,7 +82,7 @@ function mapRoomType(
       return dbRoomType
     case "garden":
     case "hall":
-    case "desk-area":
+    case "deskArea":
     case "other":
     default:
       return "other"

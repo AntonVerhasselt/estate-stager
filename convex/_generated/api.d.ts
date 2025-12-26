@@ -29,6 +29,12 @@ import type * as styleImages_fetchFromUnsplash from "../styleImages/fetchFromUns
 import type * as styleImages_get from "../styleImages/get.js";
 import type * as styleImages_list from "../styleImages/list.js";
 import type * as styleImages_update from "../styleImages/update.js";
+import type * as styleProfiles_get from "../styleProfiles/get.js";
+import type * as styleProfiles_helperFunctions from "../styleProfiles/helperFunctions.js";
+import type * as styleProfiles_update from "../styleProfiles/update.js";
+import type * as swipes_create from "../swipes/create.js";
+import type * as swipes_get from "../swipes/get.js";
+import type * as swipes_list from "../swipes/list.js";
 import type * as users_create from "../users/create.js";
 import type * as users_list from "../users/list.js";
 import type * as users_update from "../users/update.js";
@@ -65,6 +71,12 @@ declare const fullApi: ApiFromModules<{
   "styleImages/get": typeof styleImages_get;
   "styleImages/list": typeof styleImages_list;
   "styleImages/update": typeof styleImages_update;
+  "styleProfiles/get": typeof styleProfiles_get;
+  "styleProfiles/helperFunctions": typeof styleProfiles_helperFunctions;
+  "styleProfiles/update": typeof styleProfiles_update;
+  "swipes/create": typeof swipes_create;
+  "swipes/get": typeof swipes_get;
+  "swipes/list": typeof swipes_list;
   "users/create": typeof users_create;
   "users/list": typeof users_list;
   "users/update": typeof users_update;

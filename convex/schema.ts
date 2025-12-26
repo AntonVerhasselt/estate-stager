@@ -43,13 +43,13 @@ export default defineSchema({
     visitId: v.optional(v.id("visits")),
     originalImageId: v.optional(v.id("images")),
     roomType: v.union(
-      v.literal("living-room"),
+      v.literal("livingRoom"),
       v.literal("kitchen"),
       v.literal("bedroom"),
       v.literal("bathroom"),
       v.literal("garden"),
       v.literal("hall"),
-      v.literal("desk-area"),
+      v.literal("deskArea"),
       v.literal("other")
     ),
   }).index("by_propertyId", ["propertyId"])
@@ -92,37 +92,37 @@ export default defineSchema({
       v.literal("coastal")
     ))),
     colorPalette: v.optional(v.array(v.union(
-      v.literal("light-and-airy"),
-      v.literal("dark-and-moody"),
-      v.literal("earth-tones"),
+      v.literal("lightAndAiry"),
+      v.literal("darkAndMoody"),
+      v.literal("earthTones"),
       v.literal("monochrome"),
-      v.literal("bold-and-vibrant"),
-      v.literal("warm-neutrals")
+      v.literal("boldAndVibrant"),
+      v.literal("warmNeutrals")
     ))),
     materialFocus: v.optional(v.array(v.union(
-      v.literal("natural-wood"),
-      v.literal("metal-and-glass"),
-      v.literal("stone-and-concrete"),
+      v.literal("naturalWood"),
+      v.literal("metalAndGlass"),
+      v.literal("stoneAndConcrete"),
       v.literal("upholstered"),
-      v.literal("rattan-and-wicker"),
-      v.literal("painted-and-lacquered")
+      v.literal("rattanAndWicker"),
+      v.literal("paintedAndLacquered")
     ))),
     spatialPhilosophy: v.optional(v.array(v.union(
-      v.literal("open-and-flowing"),
-      v.literal("cozy-and-defined"),
-      v.literal("minimal-and-uncluttered"),
-      v.literal("maximalist-and-collected"),
-      v.literal("symmetrical-and-formal"),
-      v.literal("functional-and-zoned")
+      v.literal("openAndFlowing"),
+      v.literal("cozyAndDefined"),
+      v.literal("minimalAndUncluttered"),
+      v.literal("maximalistAndCollected"),
+      v.literal("symmetricalAndFormal"),
+      v.literal("functionalAndZoned")
     ))),
     roomType: v.optional(v.union(
-      v.literal("living-room"),
+      v.literal("livingRoom"),
       v.literal("kitchen"),
       v.literal("bedroom"),
       v.literal("bathroom"),
       v.literal("garden"),
       v.literal("hall"),
-      v.literal("desk-area"),
+      v.literal("deskArea"),
       v.literal("other")
     )),
   }).index("by_unsplashId", ["unsplashId"])
@@ -130,4 +130,65 @@ export default defineSchema({
     .index("by_confirmed", ["confirmed"])
     .index("by_roomType", ["roomType"])
     .index("by_confirmed_deleted", ["confirmed", "deleted"]),
+
+  // Swipes table - immutable log of all swipes
+  swipes: defineTable({
+    visitId: v.id("visits"),
+    styleImageId: v.id("styleImages"),
+    direction: v.union(v.literal("like"), v.literal("dislike")),
+  })
+    .index("by_visitId", ["visitId"])
+    .index("by_visitId_styleImageId", ["visitId", "styleImageId"]),
+    
+  // StyleProfiles table - computed cache of preference profiles
+  styleProfiles: defineTable({
+    visitId: v.id("visits"),
+    // Scores for each tag dimension (e.g., { "style.modern": 8.5, "style.traditional": -2.3 })
+    scores: v.object({
+      style: v.object({
+        modern: v.number(),
+        traditional: v.number(),
+        scandinavian: v.number(),
+        industrial: v.number(),
+        bohemian: v.number(),
+        coastal: v.number(),
+      }),
+      colorPalette: v.object({
+        lightAndAiry: v.number(),
+        darkAndMoody: v.number(),
+        earthTones: v.number(),
+        monochrome: v.number(),
+        boldAndVibrant: v.number(),
+        warmNeutrals: v.number(),
+      }),
+      materialFocus: v.object({
+        naturalWood: v.number(),
+        metalAndGlass: v.number(),
+        stoneAndConcrete: v.number(),
+        upholstered: v.number(),
+        rattanAndWicker: v.number(),
+        paintedAndLacquered: v.number(),
+      }),
+      spatialPhilosophy: v.object({
+        openAndFlowing: v.number(),
+        cozyAndDefined: v.number(),
+        minimalAndUncluttered: v.number(),
+        maximalistAndCollected: v.number(),
+        symmetricalAndFormal: v.number(),
+        functionalAndZoned: v.number(),
+      }),
+    }),
+    swipeCount: v.number(), // Total swipes (derived from swipes table)
+    dimensionConfidence: v.object({
+      style: v.number(),
+      colorPalette: v.number(),
+      materialFocus: v.number(),
+      spatialPhilosophy: v.number(),
+    }),
+    overallConfidence: v.number(), // Average clarity across dimensions (0-1)
+    completedAt: v.optional(v.number()), // Timestamp when profile reached completion (null if incomplete)
+    lastUpdatedAt: v.number(), // Last time the profile was recalculated
+  })
+    .index("by_visitId", ["visitId"])
+    .index("by_completedAt", ["completedAt"]),
 });

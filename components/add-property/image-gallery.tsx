@@ -7,33 +7,13 @@ import {
   ImageRoomTypeGrid,
   ImageCountDisplay,
 } from "@/components/shared/image-room-type-grid"
-
-// Room type definitions
-export type RoomType =
-  | "living-room"
-  | "kitchen"
-  | "bedroom"
-  | "bathroom"
-  | "garden"
-  | "hall"
-  | "desk-area"
-  | "other"
+import type { RoomType } from "@/types/design"
+import { ROOM_TYPE_OPTIONS } from "@/types/design"
 
 export type PropertyImage = {
   src: string
   roomType: RoomType | null
 }
-
-export const ROOM_TYPE_OPTIONS: { value: RoomType; label: string }[] = [
-  { value: "living-room", label: "Living Room" },
-  { value: "kitchen", label: "Kitchen" },
-  { value: "bedroom", label: "Bedroom" },
-  { value: "bathroom", label: "Bathroom" },
-  { value: "garden", label: "Garden" },
-  { value: "hall", label: "Hall" },
-  { value: "desk-area", label: "Desk Area" },
-  { value: "other", label: "Other" },
-]
 
 type ImageGalleryProps = {
   images: PropertyImage[]
