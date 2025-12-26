@@ -89,19 +89,9 @@ export function useImageBuffer(visitId: Id<"visits"> | null): UseImageBufferRetu
 
   const createSwipe = useMutation(api.swipes.create.createSwipe);
 
-  // Sync local swipe count with backend on initial load
-  React.useEffect(() => {
-    if (backendSwipeCount !== undefined && state.localSwipeCount === 0 && !state.isReady) {
-      setState((prev) => ({
-        ...prev,
-        localSwipeCount: backendSwipeCount,
-      }));
-    }
-  }, [backendSwipeCount, state.localSwipeCount, state.isReady]);
-
   // Initialize buffer with initial images
   React.useEffect(() => {
-    if (!initialImages || state.isReady) return;
+    if (!initialImages || backendSwipeCount === undefined || state.isReady) return;
 
     const initializeBuffer = async () => {
       // Mark all initial images as seen
@@ -123,12 +113,12 @@ export function useImageBuffer(visitId: Id<"visits"> | null): UseImageBufferRetu
         buffer: initialImages,
         isReady: true,
         isExhausted: initialImages.length === 0,
-        localSwipeCount: backendSwipeCount ?? prev.localSwipeCount,
+        localSwipeCount: backendSwipeCount,
       }));
     };
 
     initializeBuffer();
-  }, [initialImages, state.isReady, backendSwipeCount]);
+  }, [initialImages, backendSwipeCount, state.isReady]);
 
   // Refill buffer when we get a new image from the query
   React.useEffect(() => {
