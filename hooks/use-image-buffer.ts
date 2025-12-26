@@ -67,9 +67,6 @@ export function useImageBuffer(visitId: Id<"visits"> | null): UseImageBufferRetu
 
   // Track IDs we've already added to buffer to avoid duplicates
   const seenIdsRef = React.useRef<Set<string>>(new Set());
-  
-  // Track if we're currently fetching a new image
-  const isFetchingRef = React.useRef(false);
 
   // Convex queries and mutations
   const initialImages = useQuery(
@@ -153,7 +150,6 @@ export function useImageBuffer(visitId: Id<"visits"> | null): UseImageBufferRetu
           ...prev,
           buffer: [...prev.buffer, nextImage],
         }));
-        isFetchingRef.current = false;
       });
   }, [nextImage, state.isReady]);
 
