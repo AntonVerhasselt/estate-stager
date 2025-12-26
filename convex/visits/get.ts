@@ -1,6 +1,36 @@
 import { v } from "convex/values";
 import { query } from "../_generated/server";
 
+/**
+ * Get a visit by its prospectLinkId (used in public URLs)
+ * No auth required - the prospectLinkId acts as a bearer token
+ * 
+ * Used by prospects to access their swipe quiz and style profile
+ */
+export const getVisitByProspectLink = query({
+  args: {
+    prospectLinkId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const visit = await ctx.db
+      .query("visits")
+      .withIndex("by_prospectLinkId", (q) => 
+        q.eq("prospectLinkId", args.prospectLinkId)
+      )
+      .first();
+
+    if (!visit) {
+      return null;
+    }
+
+    return {
+      _id: visit._id,
+      prospectName: visit.prospectName,
+      status: visit.status,
+    };
+  },
+});
+
 export const getVisitById = query({
   args: { visitId: v.id("visits") },
   handler: async (ctx, args) => {

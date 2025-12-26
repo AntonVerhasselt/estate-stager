@@ -2,48 +2,20 @@
 
 import * as React from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { useQuery } from "convex/react"
 import { AnimatePresence } from "framer-motion"
+import { Loader2 } from "lucide-react"
 
+import { api } from "@/convex/_generated/api"
 import { ExplanationScreen } from "@/components/swipe/explanation-screen"
-import { SwipeContainer, type SwipedImages } from "@/components/swipe/swipe-container"
+import { SwipeContainer } from "@/components/swipe/swipe-container"
 import { CompletionModal } from "@/components/swipe/completion-modal"
-import { ViewProfileButton } from "@/components/swipe/view-profile-button"
-import { mockSwipeImages, MIN_SWIPES_FOR_PROFILE, type SwipeImage } from "@/lib/mock-data/swipe-images"
-import { getVisit } from "@/lib/mock-data/visits"
+import { useImageBuffer } from "@/hooks/use-image-buffer"
 
 // ============================================================================
 // TYPES
 // ============================================================================
 type SwipePhase = "explanation" | "swiping"
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-function getStorageKey(visitId: string) {
-  return `swipe-state-${visitId}`
-}
-
-function loadSwipedImages(visitId: string): SwipedImages | null {
-  if (typeof window === "undefined") return null
-  try {
-    const stored = sessionStorage.getItem(getStorageKey(visitId))
-    if (stored) {
-      return JSON.parse(stored) as SwipedImages
-    }
-  } catch {
-    // Ignore parse errors
-  }
-  return null
-}
-
-function saveSwipedImages(visitId: string, images: SwipedImages) {
-  if (typeof window === "undefined") return
-  try {
-    sessionStorage.setItem(getStorageKey(visitId), JSON.stringify(images))
-  } catch {
-    // Ignore storage errors
-  }
-}
 
 // ============================================================================
 // PAGE COMPONENT
@@ -57,59 +29,87 @@ export default function SwipeQuizPage({
   const router = useRouter()
   const searchParams = useSearchParams()
   
-  // Fetch visit data (mock - would be a real API call in production)
-  const visit = getVisit(resolvedParams.visitId)
-  const hasStyleProfile = visit.styleProfile.hasStyleProfile
+  // The URL param is actually the prospectLinkId, not the visitId
+  const prospectLinkId = resolvedParams.visitId
   
-  // Check if we should skip the explanation (coming back from profile OR already has profile)
-  const shouldContinue = searchParams.get("continue") === "true"
-  const skipExplanation = shouldContinue || hasStyleProfile
-  
-  // State - restore from sessionStorage when continuing
-  const [phase, setPhase] = React.useState<SwipePhase>(skipExplanation ? "swiping" : "explanation")
-  const [swipedImages, setSwipedImages] = React.useState<SwipedImages>(() => {
-    if (shouldContinue || hasStyleProfile) {
-      const stored = loadSwipedImages(resolvedParams.visitId)
-      if (stored) return stored
-    }
-    return { liked: [], disliked: [] }
-  })
-  const [showCompletionModal, setShowCompletionModal] = React.useState(false)
-  // If visit already has a style profile, they've already seen/dismissed the modal
-  const [hasSeenCompletionModal, setHasSeenCompletionModal] = React.useState(
-    shouldContinue || hasStyleProfile
+  // Fetch visit data from backend using prospectLinkId
+  const visit = useQuery(
+    api.visits.get.getVisitByProspectLink,
+    { prospectLinkId }
   )
   
-  // Computed values
-  const totalSwiped = swipedImages.liked.length + swipedImages.disliked.length
-  const hasEnoughForProfile = totalSwiped >= MIN_SWIPES_FOR_PROFILE || hasStyleProfile
-  // Show floating button if visit has a style profile OR user has seen the completion modal
-  const showFloatingButton = (hasStyleProfile || hasSeenCompletionModal) && phase === "swiping"
+  const visitId = visit?._id ?? null
+  
+  // Reactively subscribe to style profile updates
+  const styleProfile = useQuery(
+    api.styleProfiles.get.getStyleProfileByVisit,
+    visitId ? { visitId } : "skip"
+  )
+  
+  // Use the image buffer hook for managing the rolling 5-image buffer
+  const {
+    currentImage,
+    nextImage,
+    isLoading: isBufferLoading,
+    isExhausted,
+    handleSwipe,
+    swipeCount,
+  } = useImageBuffer(visitId)
+  
+  // Check if profile is complete (has completedAt timestamp)
+  const isProfileComplete = styleProfile?.completedAt != null
+  const hasAnySwipes = swipeCount > 0
+  
+  // Check if we should skip the explanation (coming back from profile OR already has swipes)
+  const shouldContinue = searchParams.get("continue") === "true"
+  const skipExplanation = shouldContinue || hasAnySwipes
+  
+  // State
+  const [phase, setPhase] = React.useState<SwipePhase>("explanation")
+  const [showCompletionModal, setShowCompletionModal] = React.useState(false)
+  const [hasSeenCompletionModal, setHasSeenCompletionModal] = React.useState(false)
+  
+  // Update phase when we know if we should skip explanation
+  React.useEffect(() => {
+    if (skipExplanation && phase === "explanation") {
+      setPhase("swiping")
+    }
+  }, [skipExplanation, phase])
+  
+  // Track if we've shown the completion modal for this session
+  const previousCompletedRef = React.useRef<boolean>(false)
+  
+  // Show completion modal when profile becomes complete
+  React.useEffect(() => {
+    if (
+      isProfileComplete &&
+      !previousCompletedRef.current &&
+      !hasSeenCompletionModal &&
+      phase === "swiping"
+    ) {
+      // Small delay to let the swipe animation complete
+      const timer = setTimeout(() => {
+        setShowCompletionModal(true)
+      }, 300)
+      previousCompletedRef.current = true
+      return () => clearTimeout(timer)
+    }
+    
+    // If profile was already complete when we loaded (e.g., returning user)
+    if (isProfileComplete && !previousCompletedRef.current) {
+      previousCompletedRef.current = true
+      setHasSeenCompletionModal(true)
+    }
+  }, [isProfileComplete, hasSeenCompletionModal, phase])
   
   // Handlers
   const handleStart = () => {
     setPhase("swiping")
   }
   
-  const handleSwipe = (image: SwipeImage, direction: "left" | "right") => {
-    setSwipedImages((prev) => ({
-      liked: direction === "right" ? [...prev.liked, image] : prev.liked,
-      disliked: direction === "left" ? [...prev.disliked, image] : prev.disliked,
-    }))
-    
-    // Check if we should show the completion modal
-    const newTotal = totalSwiped + 1
-    if (newTotal === MIN_SWIPES_FOR_PROFILE && !hasSeenCompletionModal) {
-      // Small delay to let the swipe animation complete
-      setTimeout(() => {
-        setShowCompletionModal(true)
-      }, 300)
-    }
-  }
-  
   const handleViewProfile = () => {
     setShowCompletionModal(false)
-    router.push(`/${resolvedParams.visitId}/profile`)
+    router.push(`/${prospectLinkId}/profile`)
   }
   
   const handleKeepSwiping = () => {
@@ -125,16 +125,26 @@ export default function SwipeQuizPage({
     }
   }
   
-  const handleFloatingButtonClick = () => {
-    router.push(`/${resolvedParams.visitId}/profile`)
+  // Loading state while fetching visit
+  if (visit === undefined) {
+    return (
+      <div className="min-h-[100dvh] bg-background flex items-center justify-center">
+        <Loader2 className="size-8 animate-spin text-primary" />
+      </div>
+    )
   }
   
-  // Persist swipedImages to sessionStorage whenever it changes
-  React.useEffect(() => {
-    if (swipedImages.liked.length > 0 || swipedImages.disliked.length > 0) {
-      saveSwipedImages(resolvedParams.visitId, swipedImages)
-    }
-  }, [swipedImages, resolvedParams.visitId])
+  // Visit not found
+  if (visit === null) {
+    return (
+      <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center px-6 text-center">
+        <h1 className="text-xl font-semibold mb-2">Visit Not Found</h1>
+        <p className="text-sm text-muted-foreground">
+          This link may have expired or is invalid.
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-[100dvh] bg-background">
@@ -144,10 +154,14 @@ export default function SwipeQuizPage({
         ) : (
           <div key="swiping" className="h-[100dvh] flex flex-col">
             <SwipeContainer
-              images={mockSwipeImages}
+              currentImage={currentImage}
+              nextImage={nextImage}
+              isLoading={isBufferLoading}
+              isExhausted={isExhausted}
+              swipeCount={swipeCount}
+              isProfileComplete={isProfileComplete}
               onSwipe={handleSwipe}
-              swipedImages={swipedImages}
-              onViewProfile={hasEnoughForProfile ? handleViewProfile : undefined}
+              onViewProfile={handleViewProfile}
             />
           </div>
         )}
@@ -159,12 +173,6 @@ export default function SwipeQuizPage({
         onOpenChange={handleCompletionModalOpenChange}
         onViewProfile={handleViewProfile}
         onKeepSwiping={handleKeepSwiping}
-      />
-      
-      {/* Floating view profile button */}
-      <ViewProfileButton
-        visible={showFloatingButton}
-        onClick={handleFloatingButtonClick}
       />
     </div>
   )

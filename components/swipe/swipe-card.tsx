@@ -5,13 +5,16 @@ import Image from "next/image"
 import { motion, useMotionValue, useTransform, type PanInfo } from "framer-motion"
 
 import { cn } from "@/lib/utils"
-import { type SwipeImage } from "@/lib/mock-data/swipe-images"
+import type { Doc } from "@/convex/_generated/dataModel"
+import { formatLabel } from "@/types/design"
 
 // ============================================================================
 // TYPES
 // ============================================================================
+export type StyleImage = Doc<"styleImages">
+
 type SwipeCardProps = {
-  image: SwipeImage
+  image: StyleImage
   onSwipe: (direction: "left" | "right") => void
   isTop?: boolean
   exitDirection?: "left" | "right"
@@ -57,6 +60,18 @@ export function SwipeCard({ image, onSwipe, isTop = false, exitDirection, isBlur
     return exitDirection === "right" ? 300 : -300
   }
 
+  // Get display label for style badge
+  const getStyleLabel = () => {
+    const style = image.style?.[0]
+    const roomType = image.roomType
+    
+    const parts: string[] = []
+    if (style) parts.push(formatLabel(style))
+    if (roomType) parts.push(formatLabel(roomType))
+    
+    return parts.length > 0 ? parts.join(" · ") : "Interior"
+  }
+
   return (
     <motion.div
       className={cn(
@@ -85,12 +100,13 @@ export function SwipeCard({ image, onSwipe, isTop = false, exitDirection, isBlur
       <div className="relative rounded-none overflow-hidden ring-1 ring-foreground/10 shadow-xl">
         {/* Main image - natural dimensions with max constraints */}
         <Image
-          src={image.imageUrl}
-          alt={`${image.style} ${image.roomType}`}
+          src={image.unsplashUrl}
+          alt={getStyleLabel()}
           width={800}
           height={600}
           className="w-auto h-auto max-w-[calc(100vw-2rem)] max-h-[60vh] sm:max-w-[500px] sm:max-h-[70vh]"
           priority={isTop}
+          unoptimized
         />
         
         {/* Like indicator overlay */}
@@ -119,8 +135,8 @@ export function SwipeCard({ image, onSwipe, isTop = false, exitDirection, isBlur
         
         {/* Style badge */}
         {!isBlurred && (
-          <div className="absolute bottom-4 left-4 z-30 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-none text-xs font-medium capitalize">
-            {image.style} · {image.roomType}
+          <div className="absolute bottom-4 left-4 z-30 bg-background/90 backdrop-blur-sm px-3 py-1.5 rounded-none text-xs font-medium">
+            {getStyleLabel()}
           </div>
         )}
       </div>

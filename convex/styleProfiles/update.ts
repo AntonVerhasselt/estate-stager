@@ -12,7 +12,8 @@ import {
 // CONSTANTS
 // ============================================================================
 const COMPLETION_CONFIDENCE_THRESHOLD = 0.8; // 80% confidence
-const MAX_SWIPES_FOR_COMPLETION = 50; // Hard stop at 50 swipes
+const MIN_SWIPES_FOR_COMPLETION = 5; // Minimum swipes required
+const MAX_SWIPES_FOR_COMPLETION = 10; // Hard stop at 10 swipes (testing)
 const MAX_SWIPES_TO_CONSIDER = 100; // Only consider last 100 swipes
 
 // ============================================================================
@@ -136,8 +137,10 @@ export const updateProfileAsync = internalAction({
 
     // 5. Check if profile is complete
     const isComplete =
-      overallConfidence >= COMPLETION_CONFIDENCE_THRESHOLD ||
-      swipeCount >= MAX_SWIPES_FOR_COMPLETION;
+      swipeCount >= MIN_SWIPES_FOR_COMPLETION && (
+        overallConfidence >= COMPLETION_CONFIDENCE_THRESHOLD ||
+        swipeCount >= MAX_SWIPES_FOR_COMPLETION
+      );
 
     // 6. Save the profile
     await ctx.runMutation(internal.styleProfiles.update.saveProfile, {

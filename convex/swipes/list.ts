@@ -16,10 +16,19 @@ export const listLikedSwipesForVisit = query({
         .order("desc")
         .collect();
   
-      // Fetch style images for each swipe and filter to only liked ones
+      // Filter to only liked swipes and deduplicate by styleImageId
       const likedSwipes = swipes.filter((s) => s.direction === "like");
+      const seenImageIds = new Set<string>();
+      const uniqueLikedSwipes = likedSwipes.filter((swipe) => {
+        if (seenImageIds.has(swipe.styleImageId)) {
+          return false;
+        }
+        seenImageIds.add(swipe.styleImageId);
+        return true;
+      });
+      
       const likedImages = await Promise.all(
-        likedSwipes.map(async (swipe) => {
+        uniqueLikedSwipes.map(async (swipe) => {
           const styleImage = await ctx.db.get(swipe.styleImageId);
           if (!styleImage) return null;
           return {
