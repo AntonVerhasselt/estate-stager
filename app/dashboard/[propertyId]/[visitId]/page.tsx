@@ -188,8 +188,9 @@ export default function VisitDetailPage({
     address: visitData.property.address,
   }
 
-  // Generate prospect link
-  const prospectLink = `estager.com/${visitData.visit.prospectLinkId}`
+  // Generate prospect link - full URL for copying, display version for UI
+  const prospectLinkFull = `${window.location.origin}/${visitData.visit.prospectLinkId}`
+  const prospectLinkDisplay = `${window.location.host}/${visitData.visit.prospectLinkId}`
 
   // Map generated images to StagedImage format
   const stagedImages: StagedImage[] = visitData.generatedImages.map((img) => ({
@@ -259,7 +260,7 @@ export default function VisitDetailPage({
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(`https://${prospectLink}`)
+      await navigator.clipboard.writeText(prospectLinkFull)
       setLinkCopied(true)
       setTimeout(() => setLinkCopied(false), 2000)
     } catch (err) {
@@ -370,7 +371,7 @@ export default function VisitDetailPage({
               <div className="flex items-center gap-2">
                 <p className="text-sm font-medium flex items-center gap-2 truncate">
                   <Link2 className="size-3.5 text-muted-foreground shrink-0" />
-                  <span className="truncate">{prospectLink}</span>
+                  <span className="truncate">{prospectLinkDisplay}</span>
                 </p>
                 <Button
                   variant="ghost"
@@ -402,7 +403,7 @@ export default function VisitDetailPage({
               profile={styleProfile}
               onUpdate={handleUpdateStylePreferences}
               editable={visit.status === "prepared"}
-              prospectLink={prospectLink}
+              prospectLink={prospectLinkDisplay}
             />
           </CardContent>
         </Card>
@@ -422,7 +423,7 @@ export default function VisitDetailPage({
               onRegenerate={handleRegenerateStagedImage}
               onGenerateAll={handleGenerateAllImages}
               hasStyleProfile={styleProfile !== null}
-              prospectLink={prospectLink}
+              prospectLink={prospectLinkDisplay}
               visitStatus={visit.status}
             />
           </CardContent>
