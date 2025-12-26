@@ -10,13 +10,31 @@ import {
   DialogContent,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { type SwipeImage } from "@/lib/mock-data/swipe-images"
+import { formatLabel } from "@/types/design"
+import type { Id } from "@/convex/_generated/dataModel"
 
 // ============================================================================
 // TYPES
 // ============================================================================
+type LikedImage = {
+  id: Id<"styleImages">
+  unsplashUrl: string
+  style?: string[]
+  roomType?: string
+}
+
 type LikedImagesGalleryProps = {
-  images: SwipeImage[]
+  images: LikedImage[]
+}
+
+// ============================================================================
+// HELPERS
+// ============================================================================
+function getImageLabel(image: LikedImage): string {
+  const parts: string[] = []
+  if (image.style?.[0]) parts.push(formatLabel(image.style[0]))
+  if (image.roomType) parts.push(formatLabel(image.roomType))
+  return parts.length > 0 ? parts.join(" · ") : "Interior"
 }
 
 // ============================================================================
@@ -31,13 +49,13 @@ export function LikedImagesGallery({ images }: LikedImagesGalleryProps) {
     setLightboxOpen(true)
   }
   
-  const goToPrevious = () => {
+  const goToPrevious = React.useCallback(() => {
     setCurrentIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1))
-  }
+  }, [images.length])
   
-  const goToNext = () => {
+  const goToNext = React.useCallback(() => {
     setCurrentIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0))
-  }
+  }, [images.length])
   
   // Keyboard navigation
   React.useEffect(() => {
@@ -57,7 +75,7 @@ export function LikedImagesGallery({ images }: LikedImagesGalleryProps) {
     
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [lightboxOpen])
+  }, [lightboxOpen, goToPrevious, goToNext])
 
   if (images.length === 0) {
     return (
@@ -82,17 +100,18 @@ export function LikedImagesGallery({ images }: LikedImagesGalleryProps) {
             className="group relative aspect-[4/3] overflow-hidden rounded-none ring-1 ring-foreground/10 hover:ring-primary/50 transition-all cursor-pointer"
           >
             <Image
-              src={image.imageUrl}
-              alt={`${image.style} ${image.roomType}`}
+              src={image.unsplashUrl}
+              alt={getImageLabel(image)}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              unoptimized
             />
             {/* Hover overlay */}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
             {/* Style badge */}
-            <div className="absolute bottom-2 left-2 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-none text-[10px] font-medium capitalize">
-              {image.style}
+            <div className="absolute bottom-2 left-2 bg-background/90 backdrop-blur-sm px-2 py-1 rounded-none text-[10px] font-medium">
+              {image.style?.[0] ? formatLabel(image.style[0]) : "Interior"}
             </div>
           </button>
         ))}
@@ -102,7 +121,7 @@ export function LikedImagesGallery({ images }: LikedImagesGalleryProps) {
       <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
         <DialogContent showCloseButton={false} className="sm:max-w-3xl max-h-[90vh] p-0 overflow-hidden bg-black">
           <DialogTitle className="sr-only">
-            {currentImage?.style} {currentImage?.roomType} image
+            {currentImage ? getImageLabel(currentImage) : "Image"}
           </DialogTitle>
           
           {/* Close button */}
@@ -119,11 +138,12 @@ export function LikedImagesGallery({ images }: LikedImagesGalleryProps) {
           <div className="relative w-full h-[70vh] sm:h-[80vh]">
             {currentImage && (
               <Image
-                src={currentImage.imageUrl}
-                alt={`${currentImage.style} ${currentImage.roomType}`}
+                src={currentImage.unsplashUrl}
+                alt={getImageLabel(currentImage)}
                 fill
                 className="object-contain"
                 sizes="100vw"
+                unoptimized
               />
             )}
             
@@ -158,8 +178,8 @@ export function LikedImagesGallery({ images }: LikedImagesGalleryProps) {
           {/* Image info */}
           {currentImage && (
             <div className="px-4 py-3 bg-background border-t border-border">
-              <p className="text-sm font-medium capitalize">
-                {currentImage.style} · {currentImage.roomType}
+              <p className="text-sm font-medium">
+                {getImageLabel(currentImage)}
               </p>
             </div>
           )}
