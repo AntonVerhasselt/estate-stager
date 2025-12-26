@@ -12,7 +12,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
-import { RoomType } from "@/components/add-property/image-gallery"
+import type { RoomType } from "@/types/design"
 import {
   ImageRoomTypeGrid,
   ImageCountDisplay,

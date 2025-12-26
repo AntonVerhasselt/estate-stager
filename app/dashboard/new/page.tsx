@@ -7,7 +7,8 @@ import { api } from "@/convex/_generated/api"
 import type { Id } from "@/convex/_generated/dataModel"
 import { UrlInputStep } from "@/components/add-property/url-input-step"
 import { ReviewEditStep, type User } from "@/components/add-property/review-edit-step"
-import type { PropertyImage, RoomType } from "@/components/add-property/image-gallery"
+import type { PropertyImage } from "@/components/add-property/image-gallery"
+import type { RoomType } from "@/types/design"
 
 type ScrapedData = {
   address: string | null
